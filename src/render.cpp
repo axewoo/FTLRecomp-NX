@@ -56,6 +56,11 @@ std::vector<std::uint32_t> codepoints(const std::string& s) {
 
 Renderer::Renderer(const Archive& a, bool hidden, int w, int h, bool accelerated) : archive_(a) {
     try {
+#ifdef __SWITCH__
+        // sdl3-nx also offers an early SDL_GPU (deko3d) path; keep the mature
+        // GLES2 renderer on Mesa.
+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
+#endif
         check(SDL_Init(SDL_INIT_VIDEO));
         window_ = SDL_CreateWindow(
             "FTLRecomp — Main Menu", w, h, SDL_WINDOW_RESIZABLE | (hidden ? SDL_WINDOW_HIDDEN : 0));

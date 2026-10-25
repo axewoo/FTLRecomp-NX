@@ -2159,7 +2159,7 @@ void Run::initiateMindControl(int owner) {
         }
     }
     setSystemLock(*source, -1, owner == 1);
-    (owner == 0 ? mind_ : enemy_.mind) = {true, 0, mindControlTimer[std::size_t(level)], 0};
+    (owner == 0 ? mind_ : enemy_.mind) = CombatAbility{true, 0, mindControlTimer[std::size_t(level)], 0, {}};
     // MIND_CONTROL_COUNT 0x837d70 is {0,1,1,1}; even a sole candidate consumes
     // random32() % count. Actor insertion order remains explicit.
     if (level == 0) {

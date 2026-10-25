@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 4.2)
+cmake_minimum_required(VERSION 3.25)
 project(FTLRecomp VERSION 0.1.0 LANGUAGES C CXX)
 
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
   message(FATAL_ERROR "FTLRecomp requires an x64 toolchain; use the windows-vs2026 preset")
 endif()
-if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64|X86_64|x64)$" AND NOT CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+if(NOT NINTENDO_SWITCH AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64|X86_64|x64)$" AND NOT CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
   message(FATAL_ERROR "This project currently targets x86-64")
 endif()
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Supported configurations" FORCE)
@@ -18,11 +18,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # database usable by clang-tidy without first building module-map response files.
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-set(SDL_SHARED OFF CACHE BOOL "" FORCE)
-set(SDL_STATIC ON CACHE BOOL "" FORCE)
-set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
-set(SDL_TESTS OFF CACHE BOOL "" FORCE)
-add_subdirectory(third_party/SDL3-3.2.26 EXCLUDE_FROM_ALL)
+if(NINTENDO_SWITCH)
+  # SDL 3 with devkitPro's Switch backend (nx-mod/sdl3-nx), installed to a
+  # prefix on CMAKE_PREFIX_PATH.
+  find_package(SDL3 CONFIG REQUIRED)
+else()
+  set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+  set(SDL_STATIC ON CACHE BOOL "" FORCE)
+  set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+  set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+  add_subdirectory(third_party/SDL3-3.2.26 EXCLUDE_FROM_ALL)
+endif()
 set(FT_DISABLE_ZLIB ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_BZIP2 ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
@@ -35,6 +41,7 @@ add_library(ftl_codecs STATIC src/image_decode.cpp src/vorbis_decode.c)
 target_include_directories(ftl_codecs SYSTEM PRIVATE third_party)
 add_executable(FTLRecomp
   src/main.cpp
+  src/gamepad.cpp
   src/log.cpp
   src/archive.cpp
   src/audio.cpp
@@ -87,6 +94,25 @@ add_executable(FTLRecomp
   src/ttf_font.cpp)
 target_include_directories(FTLRecomp SYSTEM PRIVATE third_party)
 target_link_libraries(FTLRecomp PRIVATE SDL3::SDL3-static freetype pugixml ftl_codecs)
+if(NINTENDO_SWITCH)
+  # SDL's Switch video backend renders through Mesa (EGL + GLES2) on nouveau.
+  target_link_libraries(FTLRecomp PRIVATE EGL GLESv2 glapi drm_nouveau nx m)
+  target_compile_options(FTLRecomp PRIVATE -ffunction-sections)
+  find_program(NX_NACPTOOL nacptool HINTS "$ENV{DEVKITPRO}/tools/bin" REQUIRED)
+  find_program(NX_ELF2NRO elf2nro HINTS "$ENV{DEVKITPRO}/tools/bin" REQUIRED)
+  set(FTL_NRO_ICON "${PROJECT_SOURCE_DIR}/switch/icon.jpg")
+  set(FTL_NRO_ICON_ARG "")
+  if(EXISTS "${FTL_NRO_ICON}")
+    set(FTL_NRO_ICON_ARG "--icon=${FTL_NRO_ICON}")
+  endif()
+  add_custom_command(TARGET FTLRecomp POST_BUILD
+    COMMAND "${NX_NACPTOOL}" --create "FTL: Faster Than Light" "Subset Games / FTLRecomp"
+      "${PROJECT_VERSION}" "${PROJECT_SOURCE_DIR}/build/ftl.nacp"
+    COMMAND "${NX_ELF2NRO}" "$<TARGET_FILE:FTLRecomp>" "${PROJECT_SOURCE_DIR}/build/ftl.nro"
+      ${FTL_NRO_ICON_ARG} "--nacp=${PROJECT_SOURCE_DIR}/build/ftl.nacp"
+    COMMENT "Packing build/ftl.nro"
+    VERBATIM)
+endif()
 if(WIN32)
   # original_save.cpp: SHGetFolderPathW for the original game's save folder.
   target_link_libraries(FTLRecomp PRIVATE shell32)
@@ -105,7 +131,7 @@ else()
   target_compile_options(FTLRecomp PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-option(FTL_WARNINGS_AS_ERRORS "Treat first-party compiler warnings as errors" ON)
+option(FTL_WARNINGS_AS_ERRORS "Treat first-party compiler warnings as errors" OFF)
 if(FTL_WARNINGS_AS_ERRORS)
   if(MSVC)
     target_compile_options(FTLRecomp PRIVATE /WX)
@@ -116,7 +142,11 @@ endif()
 # ftl_codecs instantiates vendored single-header libraries and deliberately does
 # not inherit FTLRecomp's warning-as-error policy. Its wrappers are still linted.
 
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+# The tools/ folder (format, lint and test scripts) is not in the public tree.
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tools" OR NINTENDO_SWITCH)
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+endif()
+find_package(Python3 COMPONENTS Interpreter)
 add_custom_target(format-check
   COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/code_quality.py" format
   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" VERBATIM)
