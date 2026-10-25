@@ -425,19 +425,35 @@ bool Run::weaponPower(int index, bool add) {
 // distances are Point::Distance 0x585e90 integers, so the running minimum of
 // PopClosestDoor is the first smallest door left in id order. The search ends
 // at the first popped door that enters the goal room.
-std::optional<Run::DoorPath> Run::findDoorPath(
-    const ShipDefinition& ship, SDL_Point start, SDL_Point goal, int shipId, bool enemy) const {
+std::optional<Run::DoorPath> Run::findDoorPath(const ShipDefinition& ship,
+                                               SDL_Point start,
+                                               SDL_Point goal,
+                                               int shipId,
+                                               bool enemy,
+                                               int startRoom) const {
+    const auto contains = [](const RoomDefinition& room, SDL_Point p) {
+        return room.x <= p.x && p.x <= room.x + room.w && room.y <= p.y && p.y <= room.y + room.h;
+    };
     const auto roomAt = [&](SDL_Point p) {
         // Room::ContainsPoint 0x46af30 with walls; the first listed room wins.
         for (const auto& room : ship.rooms) {
-            if (room.x <= p.x && p.x <= room.x + room.w && room.y <= p.y &&
-                p.y <= room.y + room.h) {
+            if (contains(room, p)) {
                 return room.id;
             }
         }
         return -1;
     };
-    const int from = roomAt(start);
+    // On a shared wall the walker's own room wins. advanceCrew assigns rooms
+    // with half-open bounds, so a crew member just past a doorway is already
+    // in the next room; starting the path from the first listed room instead
+    // sent it back through the door, and the AI re-planned every frame.
+    int from = roomAt(start);
+    if (startRoom >= 0) {
+        const auto own = std::ranges::find(ship.rooms, startRoom, &RoomDefinition::id);
+        if (own != ship.rooms.end() && contains(*own, start)) {
+            from = startRoom;
+        }
+    }
     const int to = roomAt(goal);
     if (from < 0 || to < 0) {
         return std::nullopt;
@@ -701,7 +717,8 @@ bool Run::order(RunCrew& c,
     }
     const SDL_Point goalPoint{target.x + 35 * (slot % (target.w / 35)) + 17,
                               target.y + 35 * (slot / (target.w / 35)) + 17};
-    const auto found = findDoorPath(ship, {int(c.x), int(c.y)}, goalPoint, owner, enemy);
+    const auto found =
+        findDoorPath(ship, {int(c.x), int(c.y)}, goalPoint, owner, enemy, c.room);
     if (!found) {
         return false;
     }
