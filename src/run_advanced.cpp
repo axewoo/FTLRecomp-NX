@@ -214,7 +214,7 @@ std::uint64_t Run::crewWalkTick(const std::string& animation, bool enemyOwner) c
         return tick_;
     }
     const auto& augments = enemyOwner ? enemy_.ship.augments : ship_.augments;
-    return std::ranges::find(augments, "CREW_STIMS") != augments.end()
+    return std::ranges::find(augments, std::string("CREW_STIMS")) != augments.end()
                ? static_cast<std::uint64_t>(static_cast<double>(tick_) / .7)
                : tick_;
 }

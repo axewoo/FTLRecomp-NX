@@ -309,7 +309,7 @@ original_save::Ship Run::originalShip(bool enemy) const {
         shields.superFirst = enemy ? enemy_.superShields : superShields_;
         shields.superSecond =
             enemy ? enemy_.maxSuperShields
-            : std::ranges::find(ship_.augments, "ENERGY_SHIELD") != ship_.augments.end() ? 5
+            : std::ranges::find(ship_.augments, std::string("ENERGY_SHIELD")) != ship_.augments.end() ? 5
                                                                                          : 0;
         // Native charges 0..5 at 2.5 units a second; Shields::charger runs to 2.0 s.
         shields.charger = milli((enemy ? enemy_.shieldCharge : shieldCharge_) / 2.5f);

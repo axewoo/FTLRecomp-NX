@@ -210,7 +210,7 @@ void Run::devUiAction(const std::string& action) {
             if (ids.empty()) {
                 throw std::runtime_error("No equipment blueprints available");
             }
-            const auto found = std::ranges::find(ids, value(devUiFields_, "item"));
+            const auto found = std::ranges::find(ids, value(devUiFields_, std::string("item")));
             devUiFields_["item"] =
                 found == ids.end() || found + 1 == ids.end() ? ids.front() : *(found + 1);
             return;
@@ -233,7 +233,7 @@ void Run::devUiAction(const std::string& action) {
             if (ids.empty()) {
                 throw std::runtime_error("No archived events available");
             }
-            const auto found = std::ranges::find(ids, value(devUiFields_, "event"));
+            const auto found = std::ranges::find(ids, value(devUiFields_, std::string("event")));
             devUiFields_["event"] =
                 found == ids.end() || found + 1 == ids.end() ? ids.front() : *(found + 1);
             return;

@@ -554,7 +554,7 @@ void Run::retargetSpaceDrones(int owner) {
     // bDisrupted from target->HasEquipment("DEFENSE_SCRAMBLER"); only
     // DefenseDrone::HasTarget 0x41e810 / PickTarget 0x422540 read it.
     const bool scrambled =
-        std::ranges::find(target.augments, "DEFENSE_SCRAMBLER") != target.augments.end();
+        std::ranges::find(target.augments, std::string("DEFENSE_SCRAMBLER")) != target.augments.end();
     for (auto& drone : owner == 0 ? combatDrones_ : enemy_.drones) {
         drone.defenseDisrupted = scrambled;
     }

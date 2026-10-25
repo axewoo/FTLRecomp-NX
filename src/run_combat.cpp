@@ -3905,7 +3905,7 @@ void Run::jumpWeaponFactories(bool enemy) {
     const auto& powered = enemy ? enemy_.powered : weaponPower_;
     const auto& ship = enemy ? enemy_.ship : ship_;
     const bool preigniter =
-        std::ranges::find(ship.augments, "WEAPON_PREIGNITE") != ship.augments.end();
+        std::ranges::find(ship.augments, std::string("WEAPON_PREIGNITE")) != ship.augments.end();
     for (std::size_t index = 0; index < weapons.size() && index < ship.weapons.size(); ++index) {
         auto& weapon = weapons[index];
         const auto& blueprint = catalog_.equipment(ship.weapons[index]);

@@ -1104,7 +1104,7 @@ void Run::abilityHud(bool front) {
             renderer_.draw("img/systemUI/button_teleport_base.png", button.x, button.y);
             const bool barrier =
                 enemy_.superShields > 0 &&
-                std::ranges::find(ship_.augments, "ZOLTAN_BYPASS") == ship_.augments.end();
+                std::ranges::find(ship_.augments, std::string("ZOLTAN_BYPASS")) == ship_.augments.end();
             const bool prepared = std::ranges::any_of(crew_, [&](const auto& member) {
                 return !member.dead && !member.dying && !member.intruder && !member.controlled &&
                        member.path.empty() && member.room == source->definition.room;
