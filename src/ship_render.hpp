@@ -69,6 +69,10 @@ struct ShipPaintState {
     float systemFlash = 0;
     // Strongly hacked medbay effects are per-tile, in column-major order.
     std::map<int, std::vector<float>> damagingEffectTimes;
+    // Teleporter pads: lit while the system is powered and not locked.
+    // Occupied slots (crew standing on a pad) use the selected art.
+    bool teleporterReady = false;
+    std::vector<int> teleporterOccupied;
     // Logical mounted slot -> dense weapon index; empty for hangar/legacy fixtures.
     std::vector<int> weaponSlotIndices;
     std::vector<SDL_FPoint> crewPositions;

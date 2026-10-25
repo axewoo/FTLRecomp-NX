@@ -1201,6 +1201,15 @@ void Run::combatRender() {
             view.doorLevel = std::clamp(std::min(station.power, station.health), 0, 4);
             view.doorsHacked = station.hackActive;
         }
+        if (station.definition.id == 9) {
+            view.teleporterReady =
+                station.health > 0 && station.power > 0 && !systemLocked(station);
+            for (const auto& c : enemy_.crew) {
+                if (c.health > 0 && !c.intruder && c.room == station.definition.room) {
+                    view.teleporterOccupied.push_back(c.slot);
+                }
+            }
+        }
         if (station.health != station.definition.power || station.power <= 0) {
             continue;
         }

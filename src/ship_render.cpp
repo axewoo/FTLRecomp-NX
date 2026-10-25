@@ -321,6 +321,34 @@ void ShipPainter::draw(const ShipDefinition& s,
             }
         }
     }
+    // Teleporter rooms carry no room_ art; each tile gets a 24px pad.
+    for (const auto& sys : s.systems) {
+        if (sys.id != 9 || !sys.installed) {
+            continue;
+        }
+        const auto room = std::find_if(s.rooms.begin(), s.rooms.end(), [&](const auto& a) {
+            return a.id == sys.room;
+        });
+        if (room == s.rooms.end() || !visible(room->id)) {
+            continue;
+        }
+        const int columns = room->w / 35;
+        for (int slot = 0; slot < columns * (room->h / 35); ++slot) {
+            const float px = x + room->x + float(slot % columns * 35) + 5;
+            const float py = y + room->y + float(slot / columns * 35) + 5;
+            const bool occupied =
+                std::ranges::find(v.teleporterOccupied, slot) != v.teleporterOccupied.end();
+            if (!v.teleporterReady) {
+                renderer_.draw("img/ship/interior/teleporter_off.png", px, py);
+                continue;
+            }
+            const std::string pad = occupied ? "teleporter_selected" : "teleporter_on";
+            renderer_.draw("img/ship/interior/" + pad + ".png", px, py);
+            // Slow pulse on the glow, like the other ready-state system art.
+            const float pulse = .6f + .4f * std::sin(float(v.tick % 120) / 120.f * 6.2832f);
+            renderer_.draw("img/ship/interior/" + pad + "_glow.png", px, py, 1, pulse);
+        }
+    }
     // ShipManager::OnRender 0x49abc0 draws breaches/fire before paths,
     // highlights, walls and crew, after floor and station artwork.
     if (floorEffects) {
