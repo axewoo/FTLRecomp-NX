@@ -110,6 +110,7 @@ Known limits: no text entry on Switch (ship renaming keeps the default name). Do
 ## Credits
 
 - **[Subset Games](https://subsetgames.com/)** made FTL. Please buy it.
+- **[Icon](https://github.com/axewoo/FTLRecomp-NX/blob/main/switch/icon.jpg/)**, FTL iPad app icon © Subset Games
 - **[EchoEclipseWolf](https://github.com/EchoEclipseWolf/FTL-Recompiled)** wrote FTL-Recompiled, the reimplementation this port is built on.
 - **[nx-mod/sdl3-nx](https://github.com/nx-mod/sdl3-nx)**, devkitPro and switchbrew (libnx) for SDL3 and the Switch toolchain.
 - Libraries: SDL3, FreeType, pugixml, nlohmann/json, stb.
