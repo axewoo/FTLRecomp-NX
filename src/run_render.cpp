@@ -2111,6 +2111,15 @@ void Run::render() {
             sys.definition.id == 6) {
             v.computerLevels[sys.definition.id] = sys.operatorActive ? 1 : 0;
         }
+        if (sys.definition.id == 9) {
+            // TeleportSystem::Charged 0x620920: functioning and not locked.
+            v.teleporterReady = sys.health > 0 && sys.power > 0 && !systemLocked(sys);
+            for (const auto& c : crew_) {
+                if (c.health > 0 && !c.intruder && c.room == sys.definition.room) {
+                    v.teleporterOccupied.push_back(c.slot);
+                }
+            }
+        }
     }
     std::vector<HangarCrew> appearances;
     for (auto& c : crew_) {

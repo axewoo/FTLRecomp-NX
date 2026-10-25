@@ -886,6 +886,52 @@ void Run::advancePhysicalCrew(int physicalShip) {
         const bool atDoor = doorTarget >= 0 && !path.empty() &&
                             std::abs(currentOrigin.x - path.front().point.x) < .5f &&
                             std::abs(currentOrigin.y - path.front().point.y) < .5f;
+        // A boarder breaking the system in its room attacks the room centre with
+        // its ranged strip and shots (lasers, thrown rocks), as in FTL. This is
+        // presentation only: the sabotage itself stays on the repair timer, and
+        // no RNG or pending damage is touched.
+        const bool sabotaging = !target && doorTarget < 0 && !actor.drone && !nonFighter &&
+                                actor.ship != actor.owner && !member.controlled &&
+                                member.repairKind == 3 && member.health > 0 &&
+                                member.stunTime <= 0 && member.teleportArrive <= 0 &&
+                                member.teleportLeaveKind == 0 && !moving && atFinalGoal(actor);
+        if (sabotaging) {
+            const auto& rooms = (actor.ship == 0 ? ship_ : enemy_.ship).rooms;
+            const auto shape = std::ranges::find(rooms, actor.room, &RoomDefinition::id);
+            if (shape != rooms.end()) {
+                const SDL_FPoint centre{shape->x + shape->w / 2.f, shape->y + shape->h / 2.f};
+                const float dx = centre.x - currentOrigin.x;
+                const float dy = centre.y - currentOrigin.y;
+                const std::string direction = std::abs(dx) > std::abs(dy)
+                                                  ? (dx < 0 ? "left" : "right")
+                                                  : (dy < 0 ? "up" : "down");
+                const std::string animation = "shoot_" + direction;
+                if (member.attackAnimation != animation) {
+                    member.attackAnimationElapsed = 0;
+                    member.shootElapsed = 0;
+                }
+                member.attackGoal =
+                    catalog_.animation(member.appearance.species + "_" + animation).duration;
+                member.attackAnimationElapsed += Time::step;
+                if (member.attackAnimationElapsed > member.attackGoal) {
+                    member.attackAnimationElapsed = 0;
+                }
+                member.shootElapsed += Time::step;
+                if (member.shootElapsed > 1.15f) {
+                    member.shootElapsed = 0;
+                    member.attackFrom = {float(int(currentOrigin.x)), float(int(currentOrigin.y))};
+                    member.attackTo = centre;
+                    member.attackFlight =
+                        std::max(Time::step,
+                                 std::hypot(dx, dy) / 160.f);
+                    combatSound({"crewLaser" + std::to_string(tick_ % 3 + 1)}, tick_);
+                }
+                member.attackAnimation = animation;
+                member.facing = direction;
+                shotDied = false;
+                continue;
+            }
+        }
         if ((!target && doorTarget < 0) || member.health <= 0 || member.stunTime > 0 ||
             member.teleportArrive > 0 || member.teleportLeaveKind != 0 ||
             (!atDoor && (moving || !atFinalGoal(actor))) || (nonFighter && doorTarget < 0)) {

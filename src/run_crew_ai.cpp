@@ -570,7 +570,9 @@ bool CrewAiPass::checkRoomPath(const Actor& a, int room) const {
     const SDL_Point goal{shape->x + 35 * (slot % columns) + 17,
                          shape->y + 35 * (slot / columns) + 17};
     const auto point = position(a);
-    return run_.findDoorPath(layout(), {int(point.x), int(point.y)}, goal, a.owner, ship_ == 1)
+    return run_
+        .findDoorPath(
+            layout(), {int(point.x), int(point.y)}, goal, a.owner, ship_ == 1, roomOf(a))
         .has_value();
 }
 

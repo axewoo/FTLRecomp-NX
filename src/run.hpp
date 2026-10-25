@@ -1904,8 +1904,12 @@ class Run {
                      const CombatDrone* movingDrone) const;
     int shipIntruderCount(int ship) const;
     void updateEnemyTeleportRequest();
-    std::optional<DoorPath> findDoorPath(
-        const ShipDefinition& ship, SDL_Point start, SDL_Point goal, int shipId, bool enemy) const;
+    std::optional<DoorPath> findDoorPath(const ShipDefinition& ship,
+                                         SDL_Point start,
+                                         SDL_Point goal,
+                                         int shipId,
+                                         bool enemy,
+                                         int startRoom = -1) const;
     void damageDoor(int id, bool enemy = false);
     void lockdownDoors(int roomId, bool enemy = false);
     bool forceDecreaseSystemPower(RunSystem& system, int amount, bool enemy = false);
