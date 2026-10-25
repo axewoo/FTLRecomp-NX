@@ -93,10 +93,18 @@ std::vector<GamepadAction> GamepadCursor::update(double seconds) {
     if (pad_ == nullptr) {
         return actions;
     }
+#ifdef __SWITCH__
+    // sdl3-nx reports Xbox labels for the Joy-Cons, so use Nintendo positions.
+    const auto confirm = SDL_GAMEPAD_BUTTON_EAST;
+    const auto cancel = SDL_GAMEPAD_BUTTON_SOUTH;
+    const auto pause = SDL_GAMEPAD_BUTTON_NORTH;
+    const auto jump = SDL_GAMEPAD_BUTTON_WEST;
+#else
     const auto confirm = labelled(pad_, SDL_GAMEPAD_BUTTON_LABEL_A, SDL_GAMEPAD_BUTTON_LABEL_CROSS);
     const auto cancel = labelled(pad_, SDL_GAMEPAD_BUTTON_LABEL_B, SDL_GAMEPAD_BUTTON_LABEL_CIRCLE);
     const auto pause = labelled(pad_, SDL_GAMEPAD_BUTTON_LABEL_X, SDL_GAMEPAD_BUTTON_LABEL_TRIANGLE);
     const auto jump = labelled(pad_, SDL_GAMEPAD_BUTTON_LABEL_Y, SDL_GAMEPAD_BUTTON_LABEL_SQUARE);
+#endif
     const Binding keys[] = {{pause, "Space"},
                             {jump, "J"},
                             {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "Q"},
