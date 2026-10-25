@@ -1,3 +1,4 @@
+#include "file_copy.hpp"
 #include "menu.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -64,7 +65,7 @@ bool Menu::commitProfile(Json updated) {
             }
             const bool previous = std::filesystem::exists(destination);
             if (previous) {
-                std::filesystem::copy_file(
+                ftl::copyFile(
                     destination, backup, std::filesystem::copy_options::overwrite_existing);
             }
             bool removed = false;
@@ -76,7 +77,7 @@ bool Menu::commitProfile(Json updated) {
             } catch (...) {
                 if (removed) {
                     std::error_code restoreError;
-                    std::filesystem::copy_file(backup,
+                    ftl::copyFile(backup,
                                                destination,
                                                std::filesystem::copy_options::overwrite_existing,
                                                restoreError);

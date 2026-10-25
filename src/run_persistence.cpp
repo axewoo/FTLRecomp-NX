@@ -1,3 +1,4 @@
+#include "file_copy.hpp"
 #include "run.hpp"
 #include <algorithm>
 #include <cmath>
@@ -2634,7 +2635,7 @@ void Run::save(const std::string& path) {
     }
     // Keep the last good checkpoint across a failed replacement, including on Windows.
     if (std::filesystem::exists(destination)) {
-        std::filesystem::copy_file(
+        ftl::copyFile(
             destination, backup, std::filesystem::copy_options::overwrite_existing);
         std::filesystem::remove(destination);
     }
@@ -2642,7 +2643,7 @@ void Run::save(const std::string& path) {
         std::filesystem::rename(temporary, destination);
     } catch (...) {
         if (std::filesystem::exists(backup)) {
-            std::filesystem::copy_file(
+            ftl::copyFile(
                 backup, destination, std::filesystem::copy_options::overwrite_existing);
         }
         throw;

@@ -552,13 +552,16 @@ int main(int argc, char** argv) {
             settings.height = height;
         }
 #ifdef __SWITCH__
-        // The Switch panel and dock are 60 Hz: VSync on, capped at 60, always
-        // fullscreen at the original 1280x720.
+        // The Switch panel and dock are 60 Hz, always fullscreen at the
+        // original 1280x720.
+        // VSync alone paces frames: a separate 60 FPS limiter beats against the
+        // display clock and drops a frame now and then.
         settings.vsync = true;
-        settings.frameLimit = true;
+        settings.frameLimit = false;
         settings.width = 1280;
         settings.height = 720;
-        renderFps = 60;
+        renderFps = 0;
+        framePeriod = ftl::TimeController::framePeriod(renderFps);
 #endif
         settings.validate();
         language = settings.language;

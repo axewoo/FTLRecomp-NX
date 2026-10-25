@@ -2,6 +2,9 @@
 #include "log.hpp"
 #include <algorithm>
 #include <cmath>
+#ifdef __SWITCH__
+#include <switch.h>
+#endif
 
 namespace ftl {
 namespace {
@@ -84,6 +87,7 @@ void GamepadCursor::handleEvent(const SDL_Event& event, float logicalX, float lo
 
 std::vector<GamepadAction> GamepadCursor::update(double seconds) {
     std::vector<GamepadAction> actions;
+    pollTouch(actions);
     if (pad_ == nullptr) {
         return actions;
     }
@@ -111,7 +115,8 @@ std::vector<GamepadAction> GamepadCursor::update(double seconds) {
     const float dx = axis(pad_, SDL_GAMEPAD_AXIS_LEFTX) + axis(pad_, SDL_GAMEPAD_AXIS_RIGHTX) / 4;
     const float dy = axis(pad_, SDL_GAMEPAD_AXIS_LEFTY) + axis(pad_, SDL_GAMEPAD_AXIS_RIGHTY) / 4;
     if (dx != 0 || dy != 0) {
-        const float step = cursorSpeed * boost * float(std::min(seconds, 0.1));
+        // A late frame must not throw the cursor: cap the step at 1/30 s.
+        const float step = cursorSpeed * boost * float(std::min(seconds, 1.0 / 30));
         x_ = std::clamp(x_ + dx * step, 0.f, 1279.f);
         y_ = std::clamp(y_ + dy * step, 0.f, 719.f);
         actions.push_back({GamepadAction::Type::Move, x_, y_, {}});
@@ -149,5 +154,36 @@ std::vector<GamepadAction> GamepadCursor::update(double seconds) {
     }
     std::copy(std::begin(current), std::end(current), std::begin(previous_));
     return actions;
+}
+
+void GamepadCursor::pollTouch(std::vector<GamepadAction>& actions) {
+#ifdef __SWITCH__
+    // sdl3-nx turns off touch-to-mouse and reports finger-down as finger-up,
+    // so read the touch screen directly. Its coordinates are already 1280x720.
+    HidTouchScreenState state{};
+    if (hidGetTouchScreenStates(&state, 1) == 0) {
+        return;
+    }
+    if (state.count > 0) {
+        const float x = std::clamp(float(state.touches[0].x), 0.f, 1279.f);
+        const float y = std::clamp(float(state.touches[0].y), 0.f, 719.f);
+        if (!touchHeld_) {
+            touchHeld_ = true;
+            x_ = x;
+            y_ = y;
+            actions.push_back({GamepadAction::Type::Move, x_, y_, {}});
+            actions.push_back({GamepadAction::Type::LeftDown, x_, y_, {}});
+        } else if (x != x_ || y != y_) {
+            x_ = x;
+            y_ = y;
+            actions.push_back({GamepadAction::Type::Move, x_, y_, {}});
+        }
+    } else if (touchHeld_) {
+        touchHeld_ = false;
+        actions.push_back({GamepadAction::Type::LeftUp, x_, y_, {}});
+    }
+#else
+    (void)actions;
+#endif
 }
 } // namespace ftl

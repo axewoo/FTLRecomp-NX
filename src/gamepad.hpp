@@ -28,7 +28,7 @@ public:
     std::vector<GamepadAction> update(double seconds);
 
     bool leftHeld() const {
-        return leftHeld_;
+        return leftHeld_ || touchHeld_;
     }
 
     bool connected() const {
@@ -45,7 +45,9 @@ private:
     float x_ = 640;
     float y_ = 360;
     bool leftHeld_ = false;
+    bool touchHeld_ = false;
     bool previous_[SDL_GAMEPAD_BUTTON_COUNT] = {};
     void open(SDL_JoystickID id);
+    void pollTouch(std::vector<GamepadAction>& actions);
 };
 } // namespace ftl

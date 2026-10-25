@@ -1,3 +1,4 @@
+#include "file_copy.hpp"
 #include "run.hpp"
 #include <algorithm>
 #include <cctype>
@@ -1225,7 +1226,7 @@ nlohmann::json Run::exportOriginalSave(const std::string& folder, bool closeOrig
             "original-save-backups";
         std::filesystem::create_directories(backups);
         const auto backup = backups / ("continue-" + timestamp() + ".sav");
-        std::filesystem::copy_file(
+        ftl::copyFile(
             destination, backup, std::filesystem::copy_options::overwrite_existing);
         if (readFile(backup) != readFile(destination)) {
             throw std::runtime_error("original_save_backup_mismatch");
