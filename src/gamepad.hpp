@@ -7,6 +7,8 @@
 // is mouse and keyboard only. A virtual cursor driven by the left stick stands
 // in for the mouse, and face/shoulder buttons emit the default FTL hotkeys.
 namespace ftl {
+class Renderer;
+
 struct GamepadAction {
     enum class Type { Move, LeftDown, LeftUp, RightClick, KeyDown, KeyUp };
     Type type;
@@ -31,6 +33,9 @@ public:
         return leftHeld_ || touchHeld_;
     }
 
+    // Draws the controls card while Minus is held. Call after the frame.
+    void drawHelp(Renderer& renderer) const;
+
     bool connected() const {
         return pad_ != nullptr;
     }
@@ -46,6 +51,7 @@ private:
     float y_ = 360;
     bool leftHeld_ = false;
     bool touchHeld_ = false;
+    bool help_ = false;
     bool previous_[SDL_GAMEPAD_BUTTON_COUNT] = {};
     void open(SDL_JoystickID id);
     void pollTouch(std::vector<GamepadAction>& actions);

@@ -904,6 +904,7 @@ int main(int argc, char** argv) {
             previous = now;
             menu.renderBoundary();
             menu.render();
+            gamepad.drawHelp(renderer);
             renderer.present();
             // Count completed presentations against unscaled wall time, including
             // pauses, menus, simulation work, and frame pacing between frames.

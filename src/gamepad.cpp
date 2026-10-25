@@ -1,7 +1,9 @@
 #include "gamepad.hpp"
 #include "log.hpp"
+#include "render.hpp"
 #include <algorithm>
 #include <cmath>
+#include <utility>
 #ifdef __SWITCH__
 #include <switch.h>
 #endif
@@ -104,7 +106,6 @@ std::vector<GamepadAction> GamepadCursor::update(double seconds) {
                             {SDL_GAMEPAD_BUTTON_DPAD_DOWN, "3"},
                             {SDL_GAMEPAD_BUTTON_DPAD_LEFT, "4"},
                             {SDL_GAMEPAD_BUTTON_START, "Escape"},
-                            {SDL_GAMEPAD_BUTTON_BACK, "I"},
                             {SDL_GAMEPAD_BUTTON_LEFT_STICK, "V"},
                             {SDL_GAMEPAD_BUTTON_RIGHT_STICK, "C"}};
 
@@ -152,6 +153,8 @@ std::vector<GamepadAction> GamepadCursor::update(double seconds) {
             actions.push_back({GamepadAction::Type::KeyUp, x_, y_, binding.key});
         }
     }
+    // Hold Minus (Back) for the controls card.
+    help_ = current[SDL_GAMEPAD_BUTTON_BACK];
     std::copy(std::begin(current), std::end(current), std::begin(previous_));
     return actions;
 }
@@ -185,5 +188,43 @@ void GamepadCursor::pollTouch(std::vector<GamepadAction>& actions) {
 #else
     (void)actions;
 #endif
+}
+
+void GamepadCursor::drawHelp(Renderer& renderer) const {
+    if (!help_) {
+        return;
+    }
+    static constexpr std::pair<const char*, const char*> rows[] = {
+        {"Left stick", "Move cursor"},
+        {"Right stick", "Move cursor slowly"},
+        {"ZR (hold)", "Faster cursor"},
+        {"A", "Click / hold to drag"},
+        {"B", "Deselect / cancel / power down"},
+        {"ZL + A", "Shift-click"},
+        {"X", "Pause"},
+        {"Y", "Jump / star map"},
+        {"L", "Select all crew"},
+        {"R", "Ship upgrades"},
+        {"D-pad up, right, down, left", "Weapons 1, 2, 3, 4"},
+        {"Left stick click", "Toggle autofire"},
+        {"Right stick click", "Cloak"},
+        {"+", "Menu"},
+        {"Touch screen", "Tap to click, drag to move"},
+        {"- (hold)", "This card"},
+    };
+    // Undo any clip, tint or zoom the game frame left behind.
+    renderer.setClip(std::nullopt);
+    renderer.setTint(1);
+    renderer.setTransform();
+    renderer.windowFrame({290, 80, 700, 560});
+    auto& title = renderer.font("fonts/JustinFont12Bold.font");
+    renderer.text(title, "CONTROLS", 640, 104, 2, {255, 255, 255, 255}, true);
+    auto& font = renderer.font("fonts/JustinFont12Bold.font");
+    float y = 160;
+    for (const auto& [button, action] : rows) {
+        renderer.text(font, button, 330, y, 1, {255, 230, 94, 255});
+        renderer.text(font, action, 640, y, 1, {255, 255, 255, 255});
+        y += 28;
+    }
 }
 } // namespace ftl
