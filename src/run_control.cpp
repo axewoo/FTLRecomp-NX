@@ -3685,8 +3685,10 @@ void Run::tooltip() {
             value = format("health",
                            std::to_string(std::max(1, int(member.health))),
                            std::to_string(int(crewMaximumHealth(member.appearance.species) +
-                                              member.healthBoost))) +
-                    "\n" + format("hotkey", i < crewKeyNames_.size() ? crewKeyNames_[i] : "");
+                                              member.healthBoost)));
+            if (i < crewKeyNames_.size() && !crewKeyNames_[i].empty()) {
+                value += "\n" + format("hotkey", crewKeyNames_[i]);
+            }
             x = 191;
             y = 155.f + i * 30;
             break;

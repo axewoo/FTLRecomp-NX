@@ -19,7 +19,7 @@ __pycache__/
 *.wav
 *.zip
 *.7z
-/third_party/*.zip
+/third_party/
 .vs/
 .venv/
 CMakeUserPresets.json

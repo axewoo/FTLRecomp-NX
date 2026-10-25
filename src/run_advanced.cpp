@@ -214,7 +214,7 @@ std::uint64_t Run::crewWalkTick(const std::string& animation, bool enemyOwner) c
         return tick_;
     }
     const auto& augments = enemyOwner ? enemy_.ship.augments : ship_.augments;
-    return std::ranges::find(augments, "CREW_STIMS") != augments.end()
+    return std::ranges::find(augments, std::string("CREW_STIMS")) != augments.end()
                ? static_cast<std::uint64_t>(static_cast<double>(tick_) / .7)
                : tick_;
 }
@@ -2159,7 +2159,7 @@ void Run::initiateMindControl(int owner) {
         }
     }
     setSystemLock(*source, -1, owner == 1);
-    (owner == 0 ? mind_ : enemy_.mind) = {true, 0, mindControlTimer[std::size_t(level)], 0};
+    (owner == 0 ? mind_ : enemy_.mind) = CombatAbility{true, 0, mindControlTimer[std::size_t(level)], 0, {}};
     // MIND_CONTROL_COUNT 0x837d70 is {0,1,1,1}; even a sole candidate consumes
     // random32() % count. Actor insertion order remains explicit.
     if (level == 0) {

@@ -393,6 +393,11 @@ void Menu::syncOptions() {
         crewKeys[i] = Settings::keyName(
             controls_.hotkeys.at("crew" + std::to_string(i + 1)), texts_, locale_);
     }
+#ifdef __SWITCH__
+    // Show the controller button for pause; crew hotkeys have no button.
+    run_.pauseKeyName("X");
+    crewKeys.fill("");
+#endif
     run_.crewKeyNames(std::move(crewKeys));
     std::array<int, 8> weaponLabels;
     std::array<int, 8> droneLabels;
@@ -412,6 +417,10 @@ void Menu::syncOptions() {
             droneLabels[i] = int(i) + 5;
         }
     }
+#ifdef __SWITCH__
+    // Weapons 1-4 are on the D-pad; drones have no button.
+    droneLabels.fill(-1);
+#endif
     run_.armamentKeyLabels(weaponLabels, droneLabels);
 }
 

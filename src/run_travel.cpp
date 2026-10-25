@@ -1707,7 +1707,7 @@ void Run::mapTooltip() {
                                                   campaign_.changing.end();
     const bool revealed = beacon.known;
     const bool scanned =
-        beacon.known && std::ranges::find(ship_.augments, "ADV_SCANNERS") != ship_.augments.end();
+        beacon.known && std::ranges::find(ship_.augments, std::string("ADV_SCANNERS")) != ship_.augments.end();
     pugi::xml_document event;
     event.load_string(beacon.eventXml.c_str());
     const auto node = event.document_element();

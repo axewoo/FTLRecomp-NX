@@ -1,3 +1,4 @@
+#include "file_copy.hpp"
 #include "menu.hpp"
 #include <algorithm>
 #include <cmath>
@@ -610,7 +611,7 @@ void Menu::saveRun(const std::string& path) {
     bool checkpointWritten = false;
     try {
         if (std::filesystem::exists(destination)) {
-            std::filesystem::copy_file(destination, backup);
+            ftl::copyFile(destination, backup);
             backedUp = true;
         }
         // Stage identity/accounting in memory so the checkpoint contains the

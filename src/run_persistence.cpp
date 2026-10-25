@@ -1,3 +1,4 @@
+#include "file_copy.hpp"
 #include "run.hpp"
 #include <algorithm>
 #include <cmath>
@@ -265,7 +266,7 @@ void Run::checkpoint(nlohmann::json& data, bool loading) {
             if (!player && !shipState.contains("maxSuperShields")) {
                 const auto augments = nativeValue<std::vector<std::string>>(ship.at("augments"));
                 const bool shield =
-                    std::ranges::find(augments, "ENERGY_SHIELD") != augments.end() ||
+                    std::ranges::find(augments, std::string("ENERGY_SHIELD")) != augments.end() ||
                     nativeValue<int>(shipState.at("superShields")) > 0;
                 const auto id = ship.at("id").get<std::string>();
                 shipState["maxSuperShields"] = id.starts_with("BOSS_3_") ? 12 : shield ? 5 : 0;
@@ -2634,7 +2635,7 @@ void Run::save(const std::string& path) {
     }
     // Keep the last good checkpoint across a failed replacement, including on Windows.
     if (std::filesystem::exists(destination)) {
-        std::filesystem::copy_file(
+        ftl::copyFile(
             destination, backup, std::filesystem::copy_options::overwrite_existing);
         std::filesystem::remove(destination);
     }
@@ -2642,7 +2643,7 @@ void Run::save(const std::string& path) {
         std::filesystem::rename(temporary, destination);
     } catch (...) {
         if (std::filesystem::exists(backup)) {
-            std::filesystem::copy_file(
+            ftl::copyFile(
                 backup, destination, std::filesystem::copy_options::overwrite_existing);
         }
         throw;
@@ -2949,7 +2950,7 @@ void Run::load(const std::string& path) {
             const int target = nativeValue<int>(projectile.at("targetShip"));
             const auto& source = owner == 0 ? data.at("ship_") : enemyData.at("ship");
             const auto augments = nativeValue<std::vector<std::string>>(source.at("augments"));
-            const bool bypass = std::ranges::find(augments, "ZOLTAN_BYPASS") != augments.end();
+            const bool bypass = std::ranges::find(augments, std::string("ZOLTAN_BYPASS")) != augments.end();
             if (!projectile.contains("bombBypass")) {
                 projectile["bombBypass"] = bypass;
             }

@@ -1,4 +1,5 @@
 #include "blueprints.hpp"
+#include "gamepad.hpp"
 #include "log.hpp"
 #include "menu.hpp"
 #include "settings.hpp"
@@ -424,7 +425,14 @@ int automation(ftl::Renderer& renderer,
 
 int main(int argc, char** argv) {
     static_assert(sizeof(void*) == 8);
-    std::filesystem::path data = std::filesystem::absolute(argv[0]).parent_path() / "ftl.dat";
+#ifdef __SWITCH__
+    // hbmenu passes an sdmc: path as argv[0], which std::filesystem cannot make
+    // absolute. Everything lives beside the NRO in a fixed folder.
+    const std::filesystem::path executable = "sdmc:/switch/ftl/ftl.nro";
+#else
+    const auto executable = std::filesystem::absolute(argv[0]);
+#endif
+    std::filesystem::path data = executable.parent_path() / "ftl.dat";
     std::string fixture = "fresh";
     std::string language = "en";
     bool legacy = false;
@@ -514,7 +522,6 @@ int main(int argc, char** argv) {
             (startCombat && (json || legacy || hidden || catalog))) {
             throw std::runtime_error("invalid_argument");
         }
-        const auto executable = std::filesystem::absolute(argv[0]);
         ftl::logging::start(
             ftl::logging::readConfig(executable.parent_path() / "FTLRecomp-logging.ini"),
             executable.parent_path() / (executable.stem().string() + ".log"),
@@ -544,6 +551,18 @@ int main(int argc, char** argv) {
         if (explicitHeight) {
             settings.height = height;
         }
+#ifdef __SWITCH__
+        // The Switch panel and dock are 60 Hz, always fullscreen at the
+        // original 1280x720.
+        // VSync alone paces frames: a separate 60 FPS limiter beats against the
+        // display clock and drops a frame now and then.
+        settings.vsync = true;
+        settings.frameLimit = false;
+        settings.width = 1280;
+        settings.height = 720;
+        renderFps = 0;
+        framePeriod = ftl::TimeController::framePeriod(renderFps);
+#endif
         settings.validate();
         language = settings.language;
         width = settings.width;
@@ -623,7 +642,12 @@ int main(int argc, char** argv) {
             SDL_SetWindowTitle(renderer.window(), title.c_str());
         };
         updateTitle();
+#ifndef __SWITCH__
+        // On Switch this would open the software keyboard over the game.
         SDL_StartTextInput(renderer.window());
+#endif
+        ftl::GamepadCursor gamepad;
+        gamepad.init();
         auto previous = SDL_GetTicksNS();
         auto deadline = previous;
         bool activeAtPrevious = menu.gameplayClockActive();
@@ -634,6 +658,15 @@ int main(int argc, char** argv) {
         while (!menu.quitting()) {
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_EVENT_MOUSE_MOTION) {
+                    const auto p = renderer.logical(event.motion.x, event.motion.y);
+                    gamepad.handleEvent(event, p.x, p.y);
+                } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                    const auto p = renderer.logical(event.button.x, event.button.y);
+                    gamepad.handleEvent(event, p.x, p.y);
+                } else {
+                    gamepad.handleEvent(event, 0, 0);
+                }
                 if (event.type == SDL_EVENT_QUIT) {
                     if (menu.requestExit()) {
                         saveSettings();
@@ -772,13 +805,41 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            for (const auto& action : gamepad.update(double(SDL_GetTicksNS() - previous) / 1e9)) {
+                using Type = ftl::GamepadAction::Type;
+                switch (action.type) {
+                case Type::Move:
+                    menu.move(action.x, action.y);
+                    break;
+                case Type::LeftDown:
+                    physicalReleaseAt = 0;
+                    menu.move(action.x, action.y);
+                    menu.modifier(action.shift);
+                    menu.pointerDown(action.x, action.y);
+                    break;
+                case Type::LeftUp:
+                    menu.pointerUp(action.x, action.y);
+                    break;
+                case Type::RightClick:
+                    menu.rightClick(action.x, action.y);
+                    break;
+                case Type::KeyDown:
+                    menu.key(action.key);
+                    break;
+                case Type::KeyUp:
+                    menu.keyUp(action.key);
+                    break;
+                }
+            }
             // Recover a missed platform mouse-up without dropping equipment at
             // an unrelated coordinate. Normal release still owns valid swaps.
             // The physical button state changes before its mouse-up message is
             // pumped, so a fast click can look released here while its up event
             // is still in flight. Only a release that persists with no queued
             // mouse-up is treated as lost.
-            if ((SDL_GetGlobalMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK) != 0) {
+            // A held gamepad confirm button counts as a held left button.
+            if (gamepad.leftHeld() ||
+                (SDL_GetGlobalMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK) != 0) {
                 physicalReleaseAt = 0;
             } else if (physicalReleaseAt == 0) {
                 physicalReleaseAt = SDL_GetTicksNS();
@@ -843,6 +904,7 @@ int main(int argc, char** argv) {
             previous = now;
             menu.renderBoundary();
             menu.render();
+            gamepad.drawHelp(renderer);
             renderer.present();
             // Count completed presentations against unscaled wall time, including
             // pauses, menus, simulation work, and frame pacing between frames.
