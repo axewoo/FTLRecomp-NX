@@ -271,6 +271,10 @@ public:
         return selectedShip_;
     }
 
+    // Selects a run's ship and settings without showing the hangar, for a
+    // restart of a run that was continued from a save.
+    void selectRun(const std::string& shipId, int difficulty, bool advanced);
+
     const std::vector<std::string>& crewNameHistory() const {
         return catalog_.currentCrewNames();
     }

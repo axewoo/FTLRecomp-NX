@@ -283,6 +283,19 @@ void Hangar::progression(const ProgressionLedger& ledger) {
     }
 }
 
+void Hangar::selectRun(const std::string& shipId, int difficulty, bool advanced) {
+    const int family = ProgressionLedger::family(shipId);
+    const int layout = ProgressionLedger::layout(shipId);
+    if (family >= 0 && layout >= 0) {
+        // The run already played this ship, so allow it even if the profile
+        // has not recorded it as unlocked.
+        unlocked_[family][layout] = catalog_.ship(family, layout) != nullptr;
+        choose(family, layout);
+    }
+    difficulty_ = difficulty;
+    advanced_ = advanced;
+}
+
 void Hangar::choose(int family, int type) {
     if (family < 0 || family >= 10 || type < 0 || type > 2 || !catalog_.ship(family, type) ||
         !unlocked_[family][type]) {
