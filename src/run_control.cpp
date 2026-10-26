@@ -3069,6 +3069,64 @@ void Run::key(const std::string& key) {
     }
 }
 
+std::vector<Rect> Run::snapTargets(SnapProbe& probe) const {
+    std::vector<Rect> targets;
+    probe = SnapProbe::Everything;
+    if (writeErrorOpen() || devUiOpen_ || !panel_.empty() || defeated_) {
+        probe = SnapProbe::PointerOnly;
+        return targets;
+    }
+    if (jumpTicks_ > 0 || arrivalTicks_ > 0) {
+        return targets;
+    }
+    if (event_) {
+        // The same boxes Run::click tests for choices.
+        for (std::size_t index = 0; index < choices_.size(); ++index) {
+            targets.push_back({enemy_.present ? 202.f : 352.f,
+                               choiceRow(index) - 10,
+                               565,
+                               choiceHeight(index)});
+        }
+        if (!targets.empty()) {
+            probe = SnapProbe::Nothing;
+        }
+        return targets;
+    }
+    if (mapOpen_) {
+        // Beacons and the map's buttons, as Run::click tests them.
+        for (const auto& beacon : graph_.beacons()) {
+            targets.push_back({385.f + beacon.x - 10, 123.f + beacon.y - 10, 20, 20});
+        }
+        if (canWaitAtBeacon()) {
+            targets.push_back({730, 624, 100, 30});
+        }
+        if (fuel_ == 0) {
+            targets.push_back({956, 624, 116, 30});
+        }
+        if (fuel_ > 0 && graph_.beacons()[graph_.current()].exit && sector_ < 8) {
+            targets.push_back(nextSectorButtonRect());
+        }
+        if (!tutorialOwned_) {
+            targets.push_back({932, 619, 130, 36});
+        }
+        probe = SnapProbe::Nothing;
+        return targets;
+    }
+    for (const auto& r : ship_.rooms) {
+        targets.push_back({playerX() + ship_.horizontalShift + r.x,
+                           170.f + ship_.verticalShift + r.y,
+                           float(r.w),
+                           float(r.h)});
+    }
+    if (enemy_.present) {
+        for (const auto& r : enemy_.ship.rooms) {
+            targets.push_back(
+                {enemyOriginX() + r.x, enemyOriginY() + r.y, float(r.w), float(r.h)});
+        }
+    }
+    return targets;
+}
+
 void Run::semantic(const std::string& target, const std::string& action) {
     if (writeErrorOpen()) {
         if (target == "save_error:continue" && action == "click") {

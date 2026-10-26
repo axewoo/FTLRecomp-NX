@@ -390,6 +390,16 @@ private:
     }
 
     bool atSlot(const Actor& a) const {
+        // A walker can stop within half a pixel of its slot with the final
+        // waypoint still queued; advanceCrew snaps to it on its next step.
+        // Counting that as arrived let the AI re-order the walker every tick,
+        // and each order restarted the path before that step could happen.
+        const bool walking = a.drone ? a.drone->crewPathIndex < int(a.drone->crewPath.size())
+                             : foreign(a) ? !a.crew->boardPath.empty()
+                                          : !a.crew->path.empty();
+        if (walking) {
+            return false;
+        }
         const auto point = position(a);
         const auto slot = slotPoint(a);
         return std::abs(point.x - slot.x) < .5f && std::abs(point.y - slot.y) < .5f;

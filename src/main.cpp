@@ -121,6 +121,24 @@ std::uint32_t count(const Json& q, const char* key, std::uint32_t max) {
     return std::uint32_t(n);
 }
 
+// The clickable boxes of the current screen for the gamepad's snap mode.
+// Points at a spot nothing covers and records what the hover (and draw)
+// code tests there, plus the targets the screen lists itself. Leaves the
+// pointer at that spot; the caller moves it back.
+std::vector<ftl::Rect> snapTargets(ftl::Menu& menu) {
+    auto probe = ftl::SnapProbe::Everything;
+    std::vector<ftl::Rect> rects = menu.snapTargets(probe);
+    if (probe != ftl::SnapProbe::Nothing) {
+        ftl::hitProbe = &rects;
+        menu.move(ftl::hitProbeX, ftl::hitProbeY);
+        if (probe == ftl::SnapProbe::Everything) {
+            menu.render();
+        }
+        ftl::hitProbe = nullptr;
+    }
+    return rects;
+}
+
 Json capabilities() {
     return {{"commands",
              {"capabilities",
@@ -137,6 +155,7 @@ Json capabilities() {
               "time_state",
               "render_benchmark",
               "capture",
+              "hit_probe",
               "resize",
               "quit"}},
             {"fixtures",
@@ -382,6 +401,14 @@ int automation(ftl::Renderer& renderer,
                     throw std::runtime_error("unsupported_input_kind");
                 }
                 draw = true;
+            } else if (cmd == "hit_probe") {
+                // What the gamepad's snap mode would find on this screen.
+                const auto rects = snapTargets(menu);
+                Json list = Json::array();
+                for (const auto& r : rects) {
+                    list.push_back({r.x, r.y, r.w, r.h});
+                }
+                result = {{"rects", list}};
             } else if (cmd == "capture") {
                 auto path = std::filesystem::path(q.at("path").get<std::string>());
                 if (path.extension() != ".bmp") {
@@ -648,6 +675,7 @@ int main(int argc, char** argv) {
 #endif
         ftl::GamepadCursor gamepad;
         gamepad.init();
+        gamepad.targetSource([&] { return snapTargets(menu); });
         auto previous = SDL_GetTicksNS();
         auto deadline = previous;
         bool activeAtPrevious = menu.gameplayClockActive();
@@ -904,7 +932,7 @@ int main(int argc, char** argv) {
             previous = now;
             menu.renderBoundary();
             menu.render();
-            gamepad.drawHelp(renderer);
+            gamepad.drawOverlay(renderer);
             renderer.present();
             // Count completed presentations against unscaled wall time, including
             // pauses, menus, simulation work, and frame pacing between frames.
