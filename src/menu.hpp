@@ -418,6 +418,7 @@ public:
     void renderBoundary();
     void render();
     void semantic(const std::string& target, const std::string& action);
+    std::vector<Rect> snapTargets(SnapProbe& probe) const;
     void language(const std::string& value);
     Json state();
 

@@ -2702,6 +2702,10 @@ public:
     }
 
     void semantic(const std::string& target, const std::string& action);
+    // Rooms and map beacons the gamepad's snap mode can select. They are
+    // hit-tested without Rect::contains, so the hit probe cannot see them.
+    // Sets how much else the probe should look at.
+    std::vector<Rect> snapTargets(SnapProbe& probe) const;
 
     void inputText(const std::string& value) {
         if (writeErrorOpen_) {

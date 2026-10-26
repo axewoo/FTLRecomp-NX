@@ -2,6 +2,7 @@
 #include "archive.hpp"
 #include <SDL3/SDL.h>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -13,6 +14,18 @@
 #include <vector>
 
 namespace ftl {
+struct Rect;
+// While set, every Rect::contains test of the probe point records its
+// rectangle in screen coordinates. The gamepad's snap mode moves the pointer to that point to learn
+// what the current screen hit-tests against the pointer.
+inline std::vector<Rect>* hitProbe = nullptr;
+inline constexpr float hitProbeX = -4093.25f;
+inline constexpr float hitProbeY = -4091.75f;
+// What the probe should record besides the targets a screen lists itself:
+// the hover and draw tests, only the hover tests (a window covers the HUD,
+// which still draws its hover states), or nothing.
+enum class SnapProbe { Everything, PointerOnly, Nothing };
+
 struct Rect {
     float x;
     float y;
@@ -20,6 +33,12 @@ struct Rect {
     float h;
 
     bool contains(float px, float py) const {
+        // Code that shifts the pointer into a panel's frame tests a point
+        // near the probe; shift the box back by the same amount.
+        if (hitProbe != nullptr && std::abs(px - hitProbeX) < 2048 &&
+            std::abs(py - hitProbeY) < 2048) {
+            hitProbe->push_back({x + hitProbeX - px, y + hitProbeY - py, w, h});
+        }
         return px > x && px < x + w && py > y && py < y + h;
     }
 };

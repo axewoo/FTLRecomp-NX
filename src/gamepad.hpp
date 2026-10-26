@@ -1,13 +1,17 @@
 #pragma once
+#include "render.hpp"
 #include <SDL3/SDL.h>
+#include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
 // Native gamepad support. This has no original-game counterpart: the original
 // is mouse and keyboard only. A virtual cursor driven by the left stick stands
 // in for the mouse, and face/shoulder buttons emit the default FTL hotkeys.
+// In snap mode the left stick instead jumps between the boxes and buttons the
+// current screen hit-tests, which a target source reports on demand.
 namespace ftl {
-class Renderer;
 
 struct GamepadAction {
     enum class Type { Move, LeftDown, LeftUp, RightClick, KeyDown, KeyUp };
@@ -33,8 +37,15 @@ public:
         return leftHeld_ || touchHeld_;
     }
 
-    // Draws the controls card while Minus is held. Call after the frame.
-    void drawHelp(Renderer& renderer) const;
+    // Reports the clickable rectangles of the current screen. Calling it may
+    // move the game's pointer; update() moves it back afterwards.
+    void targetSource(std::function<std::vector<Rect>()> source) {
+        targets_ = std::move(source);
+    }
+
+    // Draws the snap highlight, the mode notice and, while Minus is held, the
+    // controls card. Call after the frame.
+    void drawOverlay(Renderer& renderer) const;
 
     bool connected() const {
         return pad_ != nullptr;
@@ -53,7 +64,22 @@ private:
     bool touchHeld_ = false;
     bool help_ = false;
     bool previous_[SDL_GAMEPAD_BUTTON_COUNT] = {};
+    // Snap mode state. Minus tapped toggles the mode, held shows the card.
+    bool snap_ = true;
+    double minusHeld_ = -1;
+    double noticeLeft_ = 0;
+    double repeatLeft_ = 0;
+    bool stickHeld_ = false;
+    double refreshLeft_ = -1;
+    bool refreshAgain_ = false;
+    double time_ = 0;
+    std::optional<Rect> selected_;
+    std::vector<Rect> cached_;
+    std::function<std::vector<Rect>()> targets_;
     void open(SDL_JoystickID id);
     void pollTouch(std::vector<GamepadAction>& actions);
+    std::vector<Rect> probe();
+    void navigate(float dx, float dy, std::vector<GamepadAction>& actions);
+    void refreshSelection(std::vector<GamepadAction>& actions);
 };
 } // namespace ftl

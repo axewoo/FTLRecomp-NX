@@ -1196,6 +1196,18 @@ void Menu::advance(double seconds) {
     syncRunProgression();
 }
 
+std::vector<Rect> Menu::snapTargets(SnapProbe& probe) const {
+    probe = SnapProbe::Everything;
+    if (!run_.isOpen()) {
+        return {};
+    }
+    if (!modal_.empty()) {
+        probe = SnapProbe::PointerOnly;
+        return {};
+    }
+    return run_.snapTargets(probe);
+}
+
 void Menu::semantic(const std::string& target, const std::string& action) {
     if (modal_ == "startup_notice") {
         const auto rectangles = startupNoticeRects();

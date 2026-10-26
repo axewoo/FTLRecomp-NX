@@ -11,7 +11,7 @@ This is a Switch port of [FTL-Recompiled](https://github.com/EchoEclipseWolf/FTL
 ## Features
 
 - Runs as a normal homebrew app (`ftl.nro`) on any Switch running Atmosphère
-- Joy-Con / Pro Controller: stick-driven cursor, click and drag, hotkeys on buttons
+- Joy-Con / Pro Controller: snap selection that jumps between buttons, rooms and boxes, or a free stick-driven cursor (tap **−** to switch), click and drag, hotkeys on buttons
 - Touch screen in handheld mode: tap to click, drag to move crew and equipment
 - In-game controls card (hold **−**)
 - Saves and profile stored next to the app on the SD card
@@ -38,10 +38,12 @@ To put it on the home screen, make a forwarder with a tool such as [sphaira](htt
 
 ## Controls
 
+The game starts in snap selection: the left stick jumps a highlight between the buttons, rooms, crew and boxes on screen, and the right stick still moves a free cursor for beam aiming or anything snap can't reach. Tap **−** to switch to the free cursor and back.
+
 | Button | Action |
 | --- | --- |
-| Left stick | Move cursor |
-| Right stick | Move cursor slowly (precise aiming) |
+| Left stick | Snap: jump to the next button or box. Free cursor: move cursor |
+| Right stick | Snap: move a free cursor. Free cursor: move cursor slowly (precise aiming) |
 | ZR (hold) | Faster cursor |
 | A | Click, hold to drag |
 | B | Right click: deselect, cancel, power down |
@@ -54,6 +56,7 @@ To put it on the home screen, make a forwarder with a tool such as [sphaira](htt
 | Left stick click | Toggle autofire |
 | Right stick click | Cloak |
 | + | Menu |
+| − (tap) | Switch between snap selection and free cursor |
 | − (hold) | Show the controls card |
 | Touch screen | Tap to click, drag to move |
 
