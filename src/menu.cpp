@@ -850,6 +850,13 @@ void Menu::routeGameOver() {
         std::filesystem::remove(savePath_, error);
     }
     if (command == 1) {
+        // A run continued from a save never opened the hangar, which would
+        // restart with no ship at all. Restart with the run's own ship.
+        if (hangar_.selected().id != run_.shipId()) {
+            openHangar();
+            hangar_.selectRun(run_.shipId(), run_.difficulty(), run_.advanced());
+            hangar_.close();
+        }
         run_.progression(profile_);
         run_.start(hangar_, locale_, seed_, true);
         audio_.restartLoops();

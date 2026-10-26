@@ -55,12 +55,15 @@ The game starts in snap selection: the left stick jumps a highlight between the 
 | D-pad ↑ → ↓ ← | Weapons 1, 2, 3, 4 |
 | Left stick click | Toggle autofire |
 | Right stick click | Cloak |
+| ZL + ZR + right stick click | Show or hide the FPS / frame time display (F11 on PC) |
 | + | Menu |
 | − (tap) | Switch between snap selection and free cursor |
 | − (hold) | Show the controls card |
 | Touch screen | Tap to click, drag to move |
 
 On PC with an Xbox or PlayStation pad, A means the button labelled A or Cross, and B means B or Circle.
+
+The FPS display shows the frame rate, the average and worst frame time, how long the game logic and the drawing take each frame, the number of frames over 25 ms in the last 10 seconds, and memory use. Commonly used artwork is decoded on a background thread right after launch, so effects and enemy ships don't stutter the first time they appear.
 
 ## Build from source
 

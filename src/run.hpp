@@ -2526,6 +2526,18 @@ public:
         return tutorialOwned_;
     }
 
+    const std::string& shipId() const {
+        return ship_.id;
+    }
+
+    int difficulty() const {
+        return difficulty_;
+    }
+
+    bool advanced() const {
+        return advanced_;
+    }
+
     // CommandGui::KeyDown 0x5201f0 returns while jumping, and its focus-window
     // dispatch (GameOver, MenuScreen, options, StarMap, event ChoiceBox,
     // InputBox, Store, ship screens) consumes the key before the options

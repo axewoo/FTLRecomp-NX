@@ -44,7 +44,10 @@ struct Rect {
 };
 
 struct Texture {
+    // RGBA copy, kept only where it is read (fonts, the software renderer).
+    // Archive artwork re-decodes on demand through Renderer::pixels.
     std::vector<unsigned char> pixels;
+    std::string source;
     SDL_Texture* value = nullptr;
     int w = 0;
     int h = 0;
@@ -89,6 +92,9 @@ struct AchievementDrawing {
     std::array<int, 3> layouts{-1, -1, -1};
 };
 
+class ImagePrefetcher;
+struct DecodedImage;
+
 class Renderer {
     const Archive& archive_;
     SDL_Window* window_ = nullptr;
@@ -108,7 +114,7 @@ class Renderer {
     std::unordered_map<std::string, Font> fonts_;
 
     struct MaskedLayer {
-        const Texture* mask;
+        Texture* mask;
         Rect destination;
         std::vector<unsigned char> previous;
         std::vector<Rect> missingGraphics;
@@ -122,8 +128,15 @@ class Renderer {
     std::vector<MaskedLayer> maskedLayers_;
     std::vector<std::unique_ptr<Texture>> maskedBackgrounds_;
     std::unordered_map<std::string, MaskedStencil> maskedStencils_;
-    const MaskedStencil& maskedStencil(const Texture& mask, Rect destination);
-    std::unique_ptr<Texture> texture(const unsigned char* pixels, int w, int h);
+    const MaskedStencil& maskedStencil(Texture& mask, Rect destination);
+    std::unique_ptr<Texture>
+    texture(const unsigned char* pixels, int w, int h, bool keepPixels = true);
+    // Artwork decoded ahead of time, keyed by archiveKey until first requested.
+    std::unique_ptr<ImagePrefetcher> prefetch_;
+    std::unordered_map<std::string, std::unique_ptr<Texture>> prefetched_;
+    std::size_t textureBytes_ = 0;
+    std::unique_ptr<Texture> upload(DecodedImage& image, const std::string& source);
+    const std::vector<unsigned char>& pixels(Texture& texture);
     void drawMissingGraphic(Rect transformedDestination);
     void release() noexcept;
 
@@ -137,6 +150,15 @@ public:
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
     Texture& image(const std::string& name);
+    // Starts decoding the commonly used artwork on a worker thread; call
+    // pumpPrefetch once per frame to upload what it has finished.
+    void prefetchImages();
+    void pumpPrefetch(double milliseconds);
+    bool prefetchFinished() const;
+    // Total size of the uploaded textures, for the performance overlay.
+    std::size_t textureBytes() const {
+        return textureBytes_;
+    }
 
     void imageLanguage(const std::string& value) {
         imageLanguage_ = value;
