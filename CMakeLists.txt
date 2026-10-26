@@ -42,6 +42,8 @@ target_include_directories(ftl_codecs SYSTEM PRIVATE third_party)
 add_executable(FTLRecomp
   src/main.cpp
   src/gamepad.cpp
+  src/image_prefetch.cpp
+  src/perf_overlay.cpp
   src/log.cpp
   src/archive.cpp
   src/audio.cpp

@@ -315,12 +315,22 @@ std::vector<GamepadAction> GamepadCursor::update(double seconds) {
         leftHeld_ = false;
         actions.push_back({GamepadAction::Type::LeftUp, x_, y_, {}});
     }
+    // ZL + ZR + right stick click toggles the performance overlay instead of
+    // cloaking; the click's release is swallowed too.
+    if (pressed(SDL_GAMEPAD_BUTTON_RIGHT_STICK) && shift && boost > 1) {
+        perfToggle_ = true;
+        perfCombo_ = true;
+    }
     bool acted = released(confirm);
     if (pressed(cancel)) {
         acted = true;
         actions.push_back({GamepadAction::Type::RightClick, x_, y_, {}});
     }
     for (const auto& binding : keys) {
+        if (perfCombo_ && binding.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK) {
+            perfCombo_ = current[binding.button];
+            continue;
+        }
         if (pressed(binding.button)) {
             acted = true;
             actions.push_back({GamepadAction::Type::KeyDown, x_, y_, binding.key});
@@ -454,6 +464,7 @@ void GamepadCursor::drawOverlay(Renderer& renderer) const {
         {"D-pad up, right, down, left", "Weapons 1, 2, 3, 4"},
         {"Left stick click", "Toggle autofire"},
         {"Right stick click", "Cloak"},
+        {"ZL + ZR + right stick click", "FPS / frame time display"},
         {"+", "Menu"},
         {"Touch screen", "Tap to click, drag to move"},
         {"- (tap)", snap_ ? "Switch to free cursor" : "Switch to snap selection"},

@@ -4,6 +4,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Native gamepad support. This has no original-game counterpart: the original
@@ -51,6 +52,11 @@ public:
         return pad_ != nullptr;
     }
 
+    // True once after ZL + ZR + right stick click.
+    bool takePerfToggle() {
+        return std::exchange(perfToggle_, false);
+    }
+
 private:
     struct Binding {
         SDL_GamepadButton button;
@@ -63,6 +69,8 @@ private:
     bool leftHeld_ = false;
     bool touchHeld_ = false;
     bool help_ = false;
+    bool perfToggle_ = false;
+    bool perfCombo_ = false;
     bool previous_[SDL_GAMEPAD_BUTTON_COUNT] = {};
     // Snap mode state. Minus tapped toggles the mode, held shows the card.
     bool snap_ = true;

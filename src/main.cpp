@@ -1,5 +1,6 @@
 #include "blueprints.hpp"
 #include "gamepad.hpp"
+#include "perf_overlay.hpp"
 #include "log.hpp"
 #include "menu.hpp"
 #include "settings.hpp"
@@ -154,6 +155,7 @@ Json capabilities() {
               "time_control",
               "time_state",
               "render_benchmark",
+              "prefetch_images",
               "capture",
               "hit_probe",
               "resize",
@@ -316,6 +318,17 @@ int automation(ftl::Renderer& renderer,
                           {"backend", renderer.backend()},
                           {"clock", menu.timing()},
                           {"state", menu.state()}};
+            } else if (cmd == "prefetch_images") {
+                // Diagnostic: the interactive loop's background artwork decode,
+                // run to completion before answering.
+                const auto started = SDL_GetTicksNS();
+                renderer.prefetchImages();
+                while (!renderer.prefetchFinished()) {
+                    renderer.pumpPrefetch(50);
+                    SDL_Delay(1);
+                }
+                result = {{"seconds", double(SDL_GetTicksNS() - started) / 1e9},
+                          {"texture_bytes", renderer.textureBytes()}};
             } else if (cmd == "time_control") {
                 menu.simulationSpeed(q.at("simulation_speed").get<double>());
                 result = menu.timing();
@@ -665,7 +678,7 @@ int main(int argc, char** argv) {
             fpsText << std::fixed << std::setprecision(1) << presentingFps;
             const auto title = "FTLRecomp | simulation " + speedText.str() + "x | presenting " +
                                fpsText.str() + " FPS | game CPU " + cpuText.str() +
-                               " ms/tick | F8 1280x720, F9 speed, F10 cap, F12 dev";
+                               " ms/tick | F8 1280x720, F9 speed, F10 cap, F11 perf, F12 dev";
             SDL_SetWindowTitle(renderer.window(), title.c_str());
         };
         updateTitle();
@@ -676,6 +689,9 @@ int main(int argc, char** argv) {
         ftl::GamepadCursor gamepad;
         gamepad.init();
         gamepad.targetSource([&] { return snapTargets(menu); });
+        ftl::PerfOverlay perfOverlay;
+        auto lastPresent = SDL_GetTicksNS();
+        renderer.prefetchImages();
         auto previous = SDL_GetTicksNS();
         auto deadline = previous;
         bool activeAtPrevious = menu.gameplayClockActive();
@@ -771,6 +787,10 @@ int main(int argc, char** argv) {
                                                                  : .1;
                         menu.simulationSpeed(simulationSpeed);
                         updateTitle();
+                        continue;
+                    }
+                    if (!event.key.repeat && event.key.key == SDLK_F11) {
+                        perfOverlay.toggle();
                         continue;
                     }
                     if (!event.key.repeat && event.key.key == SDLK_F10) {
@@ -930,10 +950,25 @@ int main(int argc, char** argv) {
             }
             activeAtPrevious = activeAfter;
             previous = now;
+            if (gamepad.takePerfToggle()) {
+                perfOverlay.toggle();
+            }
+            // Upload artwork the prefetch worker has decoded, a little per frame.
+            renderer.pumpPrefetch(2);
+            const auto drawStarted = SDL_GetTicksNS();
             menu.renderBoundary();
             menu.render();
             gamepad.drawOverlay(renderer);
+            perfOverlay.draw(renderer);
+            const auto drawFinished = SDL_GetTicksNS();
             renderer.present();
+            {
+                const auto presented = SDL_GetTicksNS();
+                perfOverlay.frame(double(presented - lastPresent) / 1e6,
+                                  double(updateFinished - updateStarted) / 1e6,
+                                  double(drawFinished - drawStarted) / 1e6);
+                lastPresent = presented;
+            }
             // Count completed presentations against unscaled wall time, including
             // pauses, menus, simulation work, and frame pacing between frames.
             const auto presentedAt = SDL_GetTicksNS();

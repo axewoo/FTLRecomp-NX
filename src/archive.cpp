@@ -10,16 +10,6 @@
 
 namespace ftl {
 namespace {
-std::string archiveKey(std::string name) {
-    // package_pkg_file_info (0x636340) and stricmp (0x64a1b0) fold ASCII only.
-    for (char& character : name) {
-        if (character >= 'A' && character <= 'Z') {
-            character = static_cast<char>(character + ('a' - 'A'));
-        }
-    }
-    return name;
-}
-
 void* inflateAllocate(FT_Memory, long size) {
     return size > 0 ? std::malloc(static_cast<std::size_t>(size)) : nullptr;
 }
@@ -36,6 +26,16 @@ void* inflateReallocate(FT_Memory, long, long size, void* block) {
     return std::realloc(block, static_cast<std::size_t>(size));
 }
 } // namespace
+
+std::string archiveKey(std::string name) {
+    // package_pkg_file_info (0x636340) and stricmp (0x64a1b0) fold ASCII only.
+    for (char& character : name) {
+        if (character >= 'A' && character <= 'Z') {
+            character = static_cast<char>(character + ('a' - 'A'));
+        }
+    }
+    return name;
+}
 
 std::uint32_t be32(const unsigned char* p) {
     return (std::uint32_t(p[0]) << 24) | (std::uint32_t(p[1]) << 16) | (std::uint32_t(p[2]) << 8) |
@@ -143,5 +143,14 @@ Bytes Archive::read(const std::string& name) const {
 
 bool Archive::contains(const std::string& name) const {
     return entries_.contains(archiveKey(name));
+}
+
+std::vector<std::string> Archive::names() const {
+    std::vector<std::string> result;
+    result.reserve(entries_.size());
+    for (const auto& entry : entries_) {
+        result.push_back(entry.first);
+    }
+    return result;
 }
 } // namespace ftl

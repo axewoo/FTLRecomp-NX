@@ -1,4 +1,5 @@
 #include "render.hpp"
+#include "image_prefetch.hpp"
 #include "log.hpp"
 #include <algorithm>
 #include <array>
@@ -6,6 +7,10 @@
 #include <iostream>
 #include <stb_image.h>
 #include <stdexcept>
+#include <unordered_set>
+#ifdef __SWITCH__
+#include <switch.h>
+#endif
 
 namespace ftl {
 namespace {
@@ -171,6 +176,8 @@ bool Renderer::setFullscreen(int mode) {
 }
 
 void Renderer::release() noexcept {
+    prefetch_.reset();
+    prefetched_.clear();
     maskedLayers_.clear();
     maskedBackgrounds_.clear();
     maskedStencils_.clear();
@@ -239,7 +246,7 @@ void Renderer::beginMaskedLayer(const std::string& maskName, SDL_FPoint position
     maskedLayers_.push_back(std::move(layer));
 }
 
-const Renderer::MaskedStencil& Renderer::maskedStencil(const Texture& mask, Rect destination) {
+const Renderer::MaskedStencil& Renderer::maskedStencil(Texture& mask, Rect destination) {
     const auto key = std::to_string(reinterpret_cast<std::uintptr_t>(&mask)) + ':' +
                      std::to_string(destination.x) + ':' + std::to_string(destination.y) + ':' +
                      std::to_string(destination.w) + ':' + std::to_string(destination.h);
@@ -250,11 +257,12 @@ const Renderer::MaskedStencil& Renderer::maskedStencil(const Texture& mask, Rect
         maskedStencils_.clear();
     }
     MaskedStencil stencil;
+    const auto& maskPixels = pixels(mask);
     const auto outside = [&](int x, int y) {
         const float u = (x + .5f - destination.x) / destination.w;
         const float v = (y + .5f - destination.y) / destination.h;
         if (u >= 0 && u < 1 && v >= 0 && v < 1) {
-            return mask.pixels[(std::size_t(int(v * mask.h)) * mask.w + int(u * mask.w)) * 4 + 3] ==
+            return maskPixels[(std::size_t(int(v * mask.h)) * mask.w + int(u * mask.w)) * 4 + 3] ==
                    0;
         }
         return true;
@@ -379,7 +387,8 @@ void Renderer::drawMissingGraphic(Rect transformedDestination) {
     check(SDL_RenderFillRect(renderer_, &destination));
 }
 
-std::unique_ptr<Texture> Renderer::texture(const unsigned char* pixels, int w, int h) {
+std::unique_ptr<Texture>
+Renderer::texture(const unsigned char* pixels, int w, int h, bool keepPixels) {
     auto s = SDL_CreateSurfaceFrom(
         w, h, SDL_PIXELFORMAT_RGBA32, const_cast<unsigned char*>(pixels), w * 4);
     if (!s) {
@@ -388,8 +397,12 @@ std::unique_ptr<Texture> Renderer::texture(const unsigned char* pixels, int w, i
     auto t = std::make_unique<Texture>();
     t->w = w;
     t->h = h;
-    t->pixels.assign(pixels, pixels + std::size_t(w) * h * 4);
+    // The software renderer samples every texture; GPU drawing needs none.
+    if (keepPixels || surface_) {
+        t->pixels.assign(pixels, pixels + std::size_t(w) * h * 4);
+    }
     t->value = SDL_CreateTextureFromSurface(renderer_, s);
+    textureBytes_ += std::size_t(w) * h * 4;
     SDL_DestroySurface(s);
     if (!t->value) {
         throw std::runtime_error(SDL_GetError());
@@ -411,25 +424,32 @@ Texture& Renderer::image(const std::string& name) {
             imageFailures_.emplace(path, "missing archive entry");
             return nullptr;
         }
-        auto bytes = archive_.read(path);
-        int width;
-        int height;
-        int channels;
-        auto pixels =
-            stbi_load_from_memory(bytes.data(), int(bytes.size()), &width, &height, &channels, 4);
-        if (!pixels) {
-            const auto* reason = stbi_failure_reason();
-            auto failure = reason ? std::string(reason) : std::string("invalid PNG");
-            // LoadImage5a0710 reports malformed localized artwork and lookup
-            // then continues to the base asset. Missing overrides are normal.
-            if (localizedCandidate) {
-                logging::warning("render", "invalid_graphic: {} ({})", path, failure);
+        // Cached under the requested spelling; the prefetcher uses archive keys.
+        const auto key = archiveKey(path);
+        std::unique_ptr<Texture> loaded;
+        if (auto ready = prefetched_.find(key); ready != prefetched_.end()) {
+            loaded = std::move(ready->second);
+            prefetched_.erase(ready);
+        } else {
+            std::optional<DecodedImage> decoded;
+            if (prefetch_) {
+                decoded = prefetch_->take(key);
             }
-            imageFailures_.emplace(path, std::move(failure));
-            return nullptr;
+            if (!decoded) {
+                decoded = decodeImage(archive_, path);
+            }
+            if (decoded->pixels.empty()) {
+                // LoadImage5a0710 reports malformed localized artwork and lookup
+                // then continues to the base asset. Missing overrides are normal.
+                if (localizedCandidate) {
+                    logging::warning(
+                        "render", "invalid_graphic: {} ({})", path, decoded->failure);
+                }
+                imageFailures_.emplace(path, std::move(decoded->failure));
+                return nullptr;
+            }
+            loaded = upload(*decoded, path);
         }
-        std::unique_ptr<unsigned char, decltype(&stbi_image_free)> owned(pixels, stbi_image_free);
-        auto loaded = texture(pixels, width, height);
         auto* result = loaded.get();
         textures_.emplace(path, std::move(loaded));
         return result;
@@ -463,6 +483,93 @@ Texture& Renderer::image(const std::string& name) {
         return result;
     };
     return missingGraphic(imageFailures_.at(name));
+}
+
+std::unique_ptr<Texture> Renderer::upload(DecodedImage& image, const std::string& source) {
+    auto loaded = texture(image.pixels.data(), image.w, image.h, false);
+    loaded->source = source;
+    return loaded;
+}
+
+const std::vector<unsigned char>& Renderer::pixels(Texture& texture) {
+    if (texture.pixels.empty() && !texture.source.empty()) {
+        auto decoded = decodeImage(archive_, texture.source);
+        if (decoded.w != texture.w || decoded.h != texture.h) {
+            throw std::runtime_error("invalid_graphic_redecode: " + texture.source);
+        }
+        texture.pixels = std::move(decoded.pixels);
+    }
+    return texture.pixels;
+}
+
+void Renderer::prefetchImages() {
+    if (surface_ || prefetch_) {
+        return;
+    }
+    // Artwork most screens and every fight use, then the enemy hulls. Large
+    // one-off screens (backgrounds, menus, the hangar) still load on demand.
+    static constexpr std::string_view common[] = {
+        "img/effects/",   "img/weapons/",  "img/combatui/",       "img/icons/",
+        "img/systemui/",  "img/statusui/", "img/warnings/",       "img/numbers/",
+        "img/wireui/",    "img/buttons/",  "img/misc/",           "img/mouse/",
+        "img/people/",    "img/upgradeui/", "img/storeui/",       "img/map/",
+        "img/ship/interior/"};
+    // Enemy hulls add about 55 MB. Launched from the album, homebrew runs as
+    // an applet with far less memory, so those stay on demand there.
+    bool includeShips = true;
+#ifdef __SWITCH__
+    const auto applet = appletGetAppletType();
+    includeShips = applet == AppletType_Application || applet == AppletType_SystemApplication;
+#endif
+    std::vector<std::string> first;
+    std::vector<std::string> later;
+    const auto languagePrefix = "img/loc-" + archiveKey(imageLanguage_) + '/';
+    for (const auto& name : archive_.names()) {
+        if (!name.starts_with("img/") || name.starts_with("img/loc-") || !name.ends_with(".png")) {
+            continue;
+        }
+        // image() prefers a localized override, so decode that one instead.
+        auto key = name;
+        if (const auto localized = languagePrefix + name.substr(4); archive_.contains(localized)) {
+            key = localized;
+        }
+        const auto rest = std::string_view(name).substr(4);
+        if (rest.find('/') == std::string_view::npos ||
+            std::ranges::any_of(common, [&](auto prefix) { return name.starts_with(prefix); })) {
+            first.push_back(std::move(key));
+        } else if (includeShips && name.starts_with("img/ships_glow/")) {
+            later.push_back(std::move(key));
+        }
+    }
+    std::ranges::sort(first);
+    std::ranges::sort(later);
+    first.insert(first.end(), later.begin(), later.end());
+    std::unordered_set<std::string> loaded;
+    for (const auto& entry : textures_) {
+        loaded.insert(archiveKey(entry.first));
+    }
+    std::erase_if(first, [&](const std::string& key) { return loaded.contains(key); });
+    prefetch_ = std::make_unique<ImagePrefetcher>(archive_, std::move(first));
+}
+
+bool Renderer::prefetchFinished() const {
+    return !prefetch_ || prefetch_->finished();
+}
+
+void Renderer::pumpPrefetch(double milliseconds) {
+    if (!prefetch_) {
+        return;
+    }
+    const auto started = SDL_GetTicksNS();
+    while (double(SDL_GetTicksNS() - started) / 1e6 < milliseconds) {
+        auto image = prefetch_->next();
+        if (!image) {
+            return;
+        }
+        if (!image->pixels.empty()) {
+            prefetched_.emplace(image->key, upload(*image, image->key));
+        }
+    }
 }
 
 Font& Renderer::font(const std::string& name) {
@@ -745,11 +852,11 @@ void Renderer::windowFrame(Rect outer, bool background, const std::vector<Rect>&
     }
     if (!textures_.contains(key)) {
         auto load = [&](const char* name) {
-            const auto& artwork = image(name);
+            auto& artwork = image(name);
             if (artwork.w != 66 || artwork.h != 72) {
                 throw std::runtime_error("invalid_window_frame_asset");
             }
-            return artwork.pixels;
+            return pixels(artwork);
         };
         auto base = load("img/window_base.png");
         auto mask = load("img/window_mask.png");
@@ -790,7 +897,7 @@ void Renderer::windowFrame(Rect outer, bool background, const std::vector<Rect>&
                 }
             }
         }
-        textures_.emplace(key, texture(rgba.data(), w, h));
+        textures_.emplace(key, texture(rgba.data(), w, h, false));
     }
     draw(*textures_.at(key), outer);
 }
@@ -816,11 +923,11 @@ void Renderer::reactorWire(float x, float y, int capacity, int available) {
                      std::to_string(available);
     if (!textures_.contains(key)) {
         auto load = [&](const char* name, int ew, int eh) {
-            const auto& artwork = image(name);
+            auto& artwork = image(name);
             if (artwork.w != ew || artwork.h != eh) {
                 throw std::runtime_error("invalid_wire_asset");
             }
-            return artwork.pixels;
+            return pixels(artwork);
         };
         auto rgba = load("img/wireUI/wire_full.png", 56, 340);
         auto mask = load("img/wire_left_mask.png", 24, 280);
@@ -842,7 +949,7 @@ void Renderer::reactorWire(float x, float y, int capacity, int available) {
                 rgba[i] = Uint8(second + first * (255 - second) / 255);
             }
         }
-        textures_.emplace(key, texture(rgba.data(), 56, 340));
+        textures_.emplace(key, texture(rgba.data(), 56, 340, false));
     }
     draw(*textures_.at(key), {x + 33, y + 15, 56, 340});
 }
@@ -876,6 +983,8 @@ void Renderer::maskedImage(const std::string& name,
                      std::to_string(destination.y - maskPosition.y) + ":" +
                      std::to_string(destination.w) + ":" + std::to_string(destination.h);
     if (!textures_.contains(key)) {
+        const auto& sourcePixels = this->pixels(source);
+        const auto& maskPixels = this->pixels(mask);
         std::vector<unsigned char> pixels(std::size_t(mask.w) * mask.h * 4, 0);
         for (int y = 0; y < mask.h; ++y) {
             for (int x = 0; x < mask.w; ++x) {
@@ -890,12 +999,12 @@ void Renderer::maskedImage(const std::string& name,
                 const auto from = (std::size_t(sy) * source.w + sx) * 4;
                 const auto to = (std::size_t(y) * mask.w + x) * 4;
                 for (int channel = 0; channel < 3; ++channel) {
-                    pixels[to + channel] = source.pixels[from + channel];
+                    pixels[to + channel] = sourcePixels[from + channel];
                 }
-                pixels[to + 3] = mask.pixels[to + 3] ? source.pixels[from + 3] : 0;
+                pixels[to + 3] = maskPixels[to + 3] ? sourcePixels[from + 3] : 0;
             }
         }
-        textures_.emplace(key, texture(pixels.data(), mask.w, mask.h));
+        textures_.emplace(key, texture(pixels.data(), mask.w, mask.h, false));
     }
     auto& composed = *textures_.at(key);
     if (color.r == 255 && color.g == 255 && color.b == 255) {
