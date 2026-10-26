@@ -14,6 +14,8 @@ This is a Switch port of [FTL-Recompiled](https://github.com/EchoEclipseWolf/FTL
 - Joy-Con / Pro Controller: snap selection that jumps between buttons, rooms and boxes, or a free stick-driven cursor (tap **−** to switch), click and drag, hotkeys on buttons
 - Touch screen in handheld mode: tap to click, drag to move crew and equipment
 - In-game controls card (hold **−**)
+- Smooth play: common artwork is decoded in the background after launch, so effects and enemy ships don't stutter the first time they appear
+- Optional FPS / frame time display (**ZL + ZR + right stick click**)
 - Saves and profile stored next to the app on the SD card
 - The same controller support also works in the PC build
 
@@ -63,7 +65,30 @@ The game starts in snap selection: the left stick jumps a highlight between the 
 
 On PC with an Xbox or PlayStation pad, A means the button labelled A or Cross, and B means B or Circle.
 
-The FPS display shows the frame rate, the average and worst frame time, how long the game logic and the drawing take each frame, the number of frames over 25 ms in the last 10 seconds, and memory use. Commonly used artwork is decoded on a background thread right after launch, so effects and enemy ships don't stutter the first time they appear.
+## Performance
+
+- **FPS display.** Press **ZL + ZR + right stick click** (F11 on PC) to show or hide it. It shows the frame rate, the average and worst frame time, how long the game logic and the drawing take each frame, the number of frames over 25 ms in the last 10 seconds, and texture and RAM use.
+- **Background loading.** The original game decodes each picture the first time it's drawn, which stalls a frame on the Switch. Here a second CPU core decodes the common artwork (effects, weapons, crew, UI, enemy ships) in the first seconds after launch. Launched from the Album, enemy ships are left out to save memory and load when first needed.
+- **Memory.** Each picture is kept once, on the GPU, instead of twice.
+
+## Changes
+
+### v1.1.0
+
+- Snap selection controls: the left stick jumps between buttons, rooms, crew and boxes; tap − for the free cursor.
+- Enemy crew (Rockmen, Zoltans and others) no longer freeze in place instead of repairing systems and fighting fires.
+- Background loading of artwork, half the memory per picture, and the FPS display (see [Performance](#performance)).
+- Restart from the pause menu after Continue no longer closes the game.
+
+### v1.0.1
+
+- Teleporter pads are drawn on the ship.
+- Boarders (especially Rockmen) no longer get stuck re-planning at doorways instead of fighting.
+- Boarders play their shooting animation while they sabotage a system.
+
+### v1.0.0
+
+- First release: native Switch port with controller and touch screen support.
 
 ## Build from source
 
@@ -106,6 +131,7 @@ cp "/path/to/ftl.dat" build/Release/
 
 | Problem | Fix |
 | --- | --- |
+| Stutters in the first seconds after launch | Normal: the artwork is still loading in the background. It's smooth once that finishes. |
 | Crash or black screen at start | Check that `ftl.dat` is in `switch/ftl/`, and launch through title override (hold R on a game). |
 | `missing_asset` in `ftl.log` | Your `ftl.dat` is from another FTL version. Use the current Steam version (1.6.x). |
 | Holding − shows "API Notifications Enabled/Disabled" | That's Ultrahand Overlay's hotkey. Turn it off: Ultrahand main screen, press +, then System > Notifications. |
