@@ -118,6 +118,17 @@ cp "/path/to/ftl.dat" build/Release/
 ./build/Release/FTLRecomp
 ```
 
+### Windows 10/11 build
+
+A self-contained `FTLRecomp.exe` (no DLLs to install), cross-compiled from Linux with MinGW-w64:
+
+```sh
+sudo apt install g++-mingw-w64-x86-64-posix ninja-build zip   # Arch / CachyOS: mingw-w64-gcc ninja zip
+bash scripts/build-windows.sh      # -> build/FTLRecomp-Windows.zip
+```
+
+GitHub Actions builds the same zip on every push (artifact **FTLRecomp-Windows**) and attaches it to `v*` releases. To play: unzip it somewhere writable (not Program Files, the game saves beside the exe), copy your `ftl.dat` next to `FTLRecomp.exe` and run it. Windows SmartScreen warns about the unsigned exe: **More info → Run anyway**. Mouse, keyboard and game controllers all work; F11 shows the FPS overlay. Set `console = true` in `FTLRecomp-logging.ini` to see the log live.
+
 ## Files on the SD card
 
 | File | What it is |

@@ -1,0 +1,7 @@
+// Windows executable resources: the icon (the FTL iPad app icon, as used for
+// the Switch build) and, for MinGW builds, an application manifest. MSVC's
+// linker embeds its own manifest, so only windres builds add this one.
+1 ICON "../../switch/icon.ico"
+#ifdef __GNUC__
+1 24 "ftlrecomp.manifest"
+#endif

@@ -14,6 +14,15 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 namespace {
 using ftl::Json;
@@ -469,6 +478,13 @@ int main(int argc, char** argv) {
     // hbmenu passes an sdmc: path as argv[0], which std::filesystem cannot make
     // absolute. Everything lives beside the NRO in a fixed folder.
     const std::filesystem::path executable = "sdmc:/switch/ftl/ftl.nro";
+#elif defined(_WIN32)
+    // argv[0] can be relative or lose characters outside the code page; ask
+    // Windows for the full wide path instead.
+    std::wstring module(32768, L'\0');
+    module.resize(GetModuleFileNameW(nullptr, module.data(), DWORD(module.size())));
+    const auto executable =
+        module.empty() ? std::filesystem::absolute(argv[0]) : std::filesystem::path(module);
 #else
     const auto executable = std::filesystem::absolute(argv[0]);
 #endif

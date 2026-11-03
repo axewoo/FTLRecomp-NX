@@ -119,6 +119,15 @@ if(WIN32)
   # original_save.cpp: SHGetFolderPathW for the original game's save folder.
   target_link_libraries(FTLRecomp PRIVATE shell32)
 endif()
+if(MINGW)
+  # A self-contained FTLRecomp.exe: no MinGW runtime DLLs to ship beside it.
+  # GUI subsystem: no console window flashes up; src/log.cpp allocates one
+  # when FTLRecomp-logging.ini asks for it.
+  target_link_options(FTLRecomp PRIVATE -static -static-libgcc -static-libstdc++ -mwindows)
+endif()
+if(WIN32 AND EXISTS "${PROJECT_SOURCE_DIR}/switch/icon.ico")
+  target_sources(FTLRecomp PRIVATE src/windows/resources.rc)
+endif()
 set(FTL_EXECUTABLE_NAME "FTLRecomp" CACHE STRING "Native executable basename")
 set_target_properties(FTLRecomp PROPERTIES
   OUTPUT_NAME "${FTL_EXECUTABLE_NAME}"
