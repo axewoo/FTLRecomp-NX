@@ -1403,6 +1403,10 @@ void Run::nextSector(int choice) {
     jumpDestination_ = graph_.current();
     revisiting_ = false;
     panel_.clear();
+    // As for a beacon jump, leaving the map clears its retained user pause.
+    // Keeping it froze the jump timer, and the pause key is ignored while
+    // jumping, so a sector jump chosen while paused soft-locked the game.
+    userPause_ = false;
     mapOpen_ = false;
     openingEvent_ = false;
     aiming_ = -1;
