@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "name": "axewoo's Switch ports",
+  "description": "FTL, Shattered Pixel Dungeon, Mindustry and the Tarkov hideout companion, straight from their GitHub releases",
+  "icon": "https://raw.githubusercontent.com/axewoo/FTLRecomp-NX/main/switch/icon.jpg",
+  "packages": [
+    {
+      "id": "ftlrecomp-nx",
+      "name": "FTL: Faster Than Light",
+      "category": "port",
+      "tags": [
+        "strategy"
+      ],
+      "author": "axewoo (FTL-Recompiled by Echo Eclipse)",
+      "tagline": "Native FTL port. Bring your own ftl.dat",
+      "description": "A native Switch build of FTL-Recompiled, a C++ reimplementation of FTL: Faster Than Light. The game's data is not included: copy ftl.dat from your own copy of FTL (Steam, GOG...) into sdmc:/switch/ftl/, next to this app. Controls: snap selection by default, tap Minus for a free cursor.",
+      "icon": "https://raw.githubusercontent.com/axewoo/FTLRecomp-NX/main/switch/icon.jpg",
+      "install": "switch/ftl",
+      "version": "v1.1.0",
+      "type": "nro",
+      "url": "https://github.com/axewoo/FTLRecomp-NX/releases/download/v1.1.0/ftl.nro",
+      "size": 12956396,
+      "sha256": "db74e1c49cb51a88a5b1248be420caf48a527bfc2122f78a76f8983809868fea",
+      "changelog": "## What's Changed\n* Add snap selection for the gamepad\n* Decode artwork in the background and add a frame-time overlay"
+    },
+    {
+      "id": "shatteredpd-nx",
+      "name": "Shattered Pixel Dungeon",
+      "category": "port",
+      "tags": [
+        "roguelike"
+      ],
+      "author": "axewoo (Shattered Pixel Dungeon by Evan Debenham, SwitchGDX)",
+      "tagline": "The open-source roguelike, v4 on Switch",
+      "description": "Shattered Pixel Dungeon built for Switch with SwitchGDX. Launch it with title override (hold R on a game) for full memory. Saves go in a data folder next to the app.",
+      "icon": "https://raw.githubusercontent.com/axewoo/ShatteredPD-NX/master/switch/icon.jpg",
+      "install": "switch/ShatteredPD",
+      "version": "v4.0.2-nx",
+      "type": "nro",
+      "url": "https://github.com/axewoo/ShatteredPD-NX/releases/download/v4.0.2-nx/ShatteredPD.nro",
+      "size": 93571930,
+      "sha256": "0099d0d9e04bb92d65799feb4b2000e9cef8cce74831f2ce784f003ba180dc46",
+      "changelog": "## What's Changed\n* Update to Shattered Pixel Dungeon v4.0.2 + CI-built NRO\n\n## New Contributors\n* @axewoo made their first contribution in https://github.com/axewoo/ShatteredPD-NX/pull/1"
+    },
+    {
+      "id": "mindustry-nx",
+      "name": "Mindustry",
+      "category": "port",
+      "tags": [
+        "strategy"
+      ],
+      "author": "axewoo (Mindustry by Anuke, SwitchGDX)",
+      "tagline": "Automation tower defense, proof-of-concept port",
+      "description": "Mindustry built for Switch with SwitchGDX. A proof of concept: the first launch builds its shader cache and can take around 15 minutes; later launches take about 20 seconds. Launch it with title override (hold R on a game).",
+      "icon": "https://raw.githubusercontent.com/axewoo/Mindustry-NX/master/core/assets/icons/icon.png",
+      "install": "switch/Mindustry",
+      "version": "v160.7-nx",
+      "type": "nro",
+      "url": "https://github.com/axewoo/Mindustry-NX/releases/download/v160.7-nx/Mindustry.nro",
+      "size": 156723429,
+      "sha256": "ed26b2b11ea2b0168776b447fe8246fe1a2ff7d5552a65dcd40a54cfb8d8b1da",
+      "changelog": "## What's Changed\n* Switch port on Mindustry v160\n* README: describe the Switch port as a proof of concept\n\n## New Contributors\n* @axewoo made their first contribution in https://github.com/axewoo/Mindustry-NX/pull/1"
+    },
+    {
+      "id": "tarkovhideout-nx",
+      "name": "Tarkov Hideout",
+      "category": "app",
+      "tags": [
+        "tool"
+      ],
+      "author": "axewoo",
+      "tagline": "Offline Escape From Tarkov companion, everything bundled",
+      "description": "Hideout stations and crafts, needed items, timers, maps, ammo, quests, keys and a gun builder, all offline. This full build bundles every map piece and wiki picture. Progress is saved in sdmc:/switch/TarkovHideout/.",
+      "icon": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/desktop/icon.png",
+      "banner": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/hero.jpg",
+      "screenshots": [
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/stations.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/map.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/ammo.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/quests.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/guns.jpg"
+      ],
+      "install": "switch/TarkovHideout",
+      "version": "v2.11.0",
+      "type": "nro",
+      "url": "https://github.com/axewoo/TarkovHideout-NX/releases/download/v2.11.0/TarkovHideout.nro",
+      "size": 259715699,
+      "sha256": "3909b8aa6ededc6e5c40a4fe06d21822678c7979b428939b84c13d12c53fb005",
+      "changelog": "## What's Changed\n* Gun builder tab like the game's modding screen (v2.11.0)\n* README: Settings screenshot with trader levels"
+    },
+    {
+      "id": "tarkovhideout-lite-nx",
+      "name": "Tarkov Hideout Lite",
+      "category": "app",
+      "tags": [
+        "tool"
+      ],
+      "author": "axewoo",
+      "tagline": "The Tarkov companion, small download",
+      "description": "The same Escape From Tarkov companion without the bundled maps and pictures: it downloads them when needed. Shares its progress with the full build in sdmc:/switch/TarkovHideout/.",
+      "icon": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/desktop/icon.png",
+      "banner": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/hero.jpg",
+      "install": "switch/TarkovHideout",
+      "version": "v2.11.0",
+      "type": "nro",
+      "url": "https://github.com/axewoo/TarkovHideout-NX/releases/download/v2.11.0/TarkovHideout-Lite.nro",
+      "size": 20480859,
+      "sha256": "87311dd1802c0a40330bf4a54d71c578a932a4bc972b2bf3f3ac8af03c3b8b50",
+      "changelog": "## What's Changed\n* Gun builder tab like the game's modding screen (v2.11.0)\n* README: Settings screenshot with trader levels"
+    }
+  ]
+}

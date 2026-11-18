@@ -1,0 +1,38 @@
+name: Update index.json
+
+# Rebuilds index.json from the ports' latest GitHub releases and commits it when it changed.
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [packages.json, tools/build_index.py]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-index
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build index.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/build_index.py
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- index.json; then
+            echo "index.json unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          git commit -m "Update index.json from latest releases"
+          git push

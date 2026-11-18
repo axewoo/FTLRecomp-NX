@@ -1,0 +1,85 @@
+{
+  "repository": {
+    "schema": 1,
+    "name": "axewoo's Switch ports",
+    "description": "FTL, Shattered Pixel Dungeon, Mindustry and the Tarkov hideout companion, straight from their GitHub releases",
+    "icon": "https://raw.githubusercontent.com/axewoo/FTLRecomp-NX/main/switch/icon.jpg"
+  },
+  "packages": [
+    {
+      "id": "ftlrecomp-nx",
+      "repo": "axewoo/FTLRecomp-NX",
+      "asset": "ftl.nro",
+      "name": "FTL: Faster Than Light",
+      "category": "port",
+      "tags": ["strategy"],
+      "author": "axewoo (FTL-Recompiled by Echo Eclipse)",
+      "tagline": "Native FTL port. Bring your own ftl.dat",
+      "description": "A native Switch build of FTL-Recompiled, a C++ reimplementation of FTL: Faster Than Light. The game's data is not included: copy ftl.dat from your own copy of FTL (Steam, GOG...) into sdmc:/switch/ftl/, next to this app. Controls: snap selection by default, tap Minus for a free cursor.",
+      "icon": "https://raw.githubusercontent.com/axewoo/FTLRecomp-NX/main/switch/icon.jpg",
+      "install": "switch/ftl"
+    },
+    {
+      "id": "shatteredpd-nx",
+      "repo": "axewoo/ShatteredPD-NX",
+      "asset": "ShatteredPD.nro",
+      "name": "Shattered Pixel Dungeon",
+      "category": "port",
+      "tags": ["roguelike"],
+      "author": "axewoo (Shattered Pixel Dungeon by Evan Debenham, SwitchGDX)",
+      "tagline": "The open-source roguelike, v4 on Switch",
+      "description": "Shattered Pixel Dungeon built for Switch with SwitchGDX. Launch it with title override (hold R on a game) for full memory. Saves go in a data folder next to the app.",
+      "icon": "https://raw.githubusercontent.com/axewoo/ShatteredPD-NX/master/switch/icon.jpg",
+      "install": "switch/ShatteredPD"
+    },
+    {
+      "id": "mindustry-nx",
+      "repo": "axewoo/Mindustry-NX",
+      "asset": "Mindustry.nro",
+      "name": "Mindustry",
+      "category": "port",
+      "tags": ["strategy"],
+      "author": "axewoo (Mindustry by Anuke, SwitchGDX)",
+      "tagline": "Automation tower defense, proof-of-concept port",
+      "description": "Mindustry built for Switch with SwitchGDX. A proof of concept: the first launch builds its shader cache and can take around 15 minutes; later launches take about 20 seconds. Launch it with title override (hold R on a game).",
+      "icon": "https://raw.githubusercontent.com/axewoo/Mindustry-NX/master/core/assets/icons/icon.png",
+      "install": "switch/Mindustry",
+      "prerelease": true
+    },
+    {
+      "id": "tarkovhideout-nx",
+      "repo": "axewoo/TarkovHideout-NX",
+      "asset": "TarkovHideout.nro",
+      "name": "Tarkov Hideout",
+      "category": "app",
+      "tags": ["tool"],
+      "author": "axewoo",
+      "tagline": "Offline Escape From Tarkov companion, everything bundled",
+      "description": "Hideout stations and crafts, needed items, timers, maps, ammo, quests, keys and a gun builder, all offline. This full build bundles every map piece and wiki picture. Progress is saved in sdmc:/switch/TarkovHideout/.",
+      "icon": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/desktop/icon.png",
+      "banner": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/hero.jpg",
+      "screenshots": [
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/stations.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/map.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/ammo.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/quests.jpg",
+        "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/guns.jpg"
+      ],
+      "install": "switch/TarkovHideout"
+    },
+    {
+      "id": "tarkovhideout-lite-nx",
+      "repo": "axewoo/TarkovHideout-NX",
+      "asset": "TarkovHideout-Lite.nro",
+      "name": "Tarkov Hideout Lite",
+      "category": "app",
+      "tags": ["tool"],
+      "author": "axewoo",
+      "tagline": "The Tarkov companion, small download",
+      "description": "The same Escape From Tarkov companion without the bundled maps and pictures: it downloads them when needed. Shares its progress with the full build in sdmc:/switch/TarkovHideout/.",
+      "icon": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/desktop/icon.png",
+      "banner": "https://raw.githubusercontent.com/axewoo/TarkovHideout-NX/main/docs/screenshots/hero.jpg",
+      "install": "switch/TarkovHideout"
+    }
+  ]
+}
